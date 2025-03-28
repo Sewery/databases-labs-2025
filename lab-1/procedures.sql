@@ -64,3 +64,34 @@ create or replace procedure p_modify_max_no_places(trip_id in TRIP.TRIP_ID%type,
         where T.TRIP_ID=trip_id;
         commit;
     end;
+
+-- updated procedures after adding triggers
+
+create or replace procedure p_modify_reservation_4(res_id in RESERVATION.RESERVATION_ID%type, no_tickets number)
+    as
+        trip_id TRIP.TRIP_ID%type;
+        available_places number;
+        current_no_tickets number;
+        res_status varchar2(10);
+    begin
+        p_check_reservation_exists(res_id);
+
+        select NO_AVAILABLE_PLACES into available_places from VW_TRIP where VW_TRIP.TRIP_ID=trip_id;
+        select R.TRIP_ID, R.NO_TICKETS, R.STATUS into trip_id, current_no_tickets, res_status
+        from RESERVATION R
+        where R.RESERVATION_ID = res_id;
+
+        if (available_places-(no_tickets-current_no_tickets))<0 then
+            raise_application_error(-20001, 'not enough free places');
+        end if;
+        if (res_status<>'N') then
+            raise_application_error(-20001, 'wrong application status');
+        end if;
+
+        update RESERVATION R
+            set NO_TICKETS=no_tickets
+        where R.RESERVATION_ID=res_id;
+
+        commit;
+    end;
+
