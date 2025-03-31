@@ -48,9 +48,9 @@ values (2, 4, 'P',3)
 Transakcje korzystająca ze zasady ACID. Każdy wykonany operacja jest domyślnie transakcją i musi być zatwierdzony przez komendę commit.
 Jeśli przy jakimś wyowłaniu wyrażenia nastąpi błąd, cała transkacja domyślnie zostanie cofnięta przez rollback, cofając wszystkie zmiany od początku transkacji. W TSQL transakcje są jawnie deklarowane za pomocą BEGIN TRANSACTION, a w przypadku błędu należy wykonać rollback w bloku try catch. W MS SQL Server również transakcje nie są automatyczne i wymagają jawnego rozpoczęcia.
 
-## zad 1
+## Zadanie 1
 
-## zad 2 Funkcje
+## zadanie 2 Funkcje
 
 - **f_trip_participants**
 
@@ -172,3 +172,31 @@ Jeśli przy jakimś wyowłaniu wyrażenia nastąpi błąd, cała transkacja domy
     select *
     from f_available_trips_to('Polska', '2024-01-01', '2024-12-12');
   ```
+## zadanie 3
+    -
+    ```sql
+    create or replace procedure p_add_reservation(trip_id int, person_id int,
+                                            no_tickets int)
+    as
+        curr_date date;
+        exist int;
+    begin
+        curr_date := trunc(sysdate);
+        begin
+            select 1 into exist
+                    from VW_AVAILABLE_TRIP t
+                    where p_add_reservation.trip_id =t.TRIP_ID and
+                    t.TRIP_DATE< curr_date and
+                    p_add_reservation.no_tickets<= t.NO_AVAILABLE_PLACES;
+        exception
+                when NO_DATA_FOUND then
+                        raise_application_error(-20001, 'No available places for reservation or invalid reservation id');
+        end;
+        insert into RESERVATION(TRIP_ID,PERSON_ID,STATUS,NO_TICKETS)
+        values(
+            p_add_reservation.trip_id,
+            p_add_reservation.person_id,
+            'N',
+            p_add_reservation.no_tickets);
+    end;
+    ```
