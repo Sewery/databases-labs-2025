@@ -352,7 +352,17 @@ end;
 
 ```
 
----
+Widok vw_trip
+
+![alt text](view1.png)
+
+Widok vw_reservation
+
+![alt text](view2.png)
+
+Widok vw_available_trip
+
+## ![alt text](view3.png)
 
 # Zadanie 2 - funkcje
 
