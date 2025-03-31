@@ -481,19 +481,19 @@ end;
 ```
 ### Działanie funkcji 1
 
-![alt text](/lab-1/images/ex2/fun-1-pol.png)
-![alt text](/lab-1/images/ex2/fun-1-out.png)
-![alt text](/lab-1/images/ex2/fun-1-blad.png)
+![alt text](./images/ex2/fun-1-pol.png)
+![alt text](./images/ex2/fun-1-out.png)
+![alt text](./images/ex2/fun-1-blad.png)
 
 ### Działanie funkcji 2
 
-![alt text](/lab-1/images/ex2/fun-2-pol.png)
-![alt text](/lab-1/images/ex2/fun-2-out.png)
+![alt text](./images/ex2/fun-2-pol.png)
+![alt text](./images/ex2/fun-2-out.png)
 
 ### Działanie funkcji 3
 
-![alt text](/lab-1/images/ex2/fun-3-pol.png)
-![alt text](/lab-1/images/ex2/fun-3-out.png)
+![alt text](./images/ex2/fun-3-pol.png)
+![alt text](./images/ex2/fun-3-out.png)
 ---
 
 # Zadanie 3 - procedury
@@ -692,28 +692,28 @@ create procedure p_modify_max_no_places(trip_id in TRIP.TRIP_ID%type, max_no_pla
 ```
 ### Działanie procedury 1
 
-![alt text](/lab-1/images/ex3/proc-1-pocz.png)
-![alt text](/lab-1/images/ex3/proc-1-pol.png)
-![alt text](/lab-1/images/ex3/proc-1-out.png)
-![alt text](/lab-1/images/ex3/proc-1-blad.png)
+![alt text](./images/ex3/proc-1-pocz.png)
+![alt text](./images/ex3/proc-1-pol.png)
+![alt text](./images/ex3/proc-1-out.png)
+![alt text](./images/ex3/proc-1-blad.png)
 ### Działanie procedury 2
 
-![alt text](/lab-1/images/ex3/proc-2-pocz.png)
-![alt text](/lab-1/images/ex3/proc-2-pol.png)
-![alt text](/lab-1/images/ex3/proc-2-out.png)
-![alt text](/lab-1/images/ex3/proc-2-blad.png)
+![alt text](./images/ex3/proc-2-pocz.png)
+![alt text](./images/ex3/proc-2-pol.png)
+![alt text](./images/ex3/proc-2-out.png)
+![alt text](./images/ex3/proc-2-blad.png)
 
 ### Działanie procedury 3
 
-![alt text](/lab-1/images/ex3/proc-3-pocz.png)
-![alt text](/lab-1/images/ex3/proc-3-pol.png)
-![alt text](/lab-1/images/ex3/proc-3-out.png)
+![alt text](./images/ex3/proc-3-pocz.png)
+![alt text](./images/ex3/proc-3-pol.png)
+![alt text](./images/ex3/proc-3-out.png)
 
 ### Działanie procedury 4
 
-![alt text](/lab-1/images/ex3/proc-4-pocz.png)
-![alt text](/lab-1/images/ex3/proc-4-pol.png)
-![alt text](/lab-1/images/ex3/proc-4-out.png)
+![alt text](./images/ex3/proc-4-pocz.png)
+![alt text](./images/ex3/proc-4-pol.png)
+![alt text](./images/ex3/proc-4-out.png)
 ---
 
 # Zadanie 4 - triggery
@@ -848,10 +848,10 @@ end;
 
 ### Działanie procedury dodającej rezerwację
 
-![alt text](/lab-1/images/ex4/proc-4-pocz.png)
-![alt text](/lab-1/images/ex4/proc-4-pol.png)
-![alt text](/lab-1/images/ex4/proc-4-out.png)
-![alt text](/lab-1/images/ex4/proc-4-log.png)
+![alt text](./images/ex4/proc-4-pocz.png)
+![alt text](./images/ex4/proc-4-pol.png)
+![alt text](./images/ex4/proc-4-out.png)
+![alt text](./images/ex4/proc-4-log.png)
 ---
 
 # Zadanie 5 - triggery
@@ -980,11 +980,11 @@ end;
 
 ### Działanie procedury modyfikującej status rezerwacji
 
-![alt text](/lab-1/images/ex5/proc-5-pocz.png)
-![alt text](/lab-1/images/ex5/proc-5-pol.png)
-![alt text](/lab-1/images/ex5/proc-5-out.png)
-![alt text](/lab-1/images/ex5/proc-5-log.png)
-![alt text](/lab-1/images/ex5/proc-5-blad.png)
+![alt text](./images/ex5/proc-5-pocz.png)
+![alt text](./images/ex5/proc-5-pol.png)
+![alt text](./images/ex5/proc-5-out.png)
+![alt text](./images/ex5/proc-5-log.png)
+![alt text](./images/ex5/proc-5-blad.png)
 ---
 
 # Zadanie 6
