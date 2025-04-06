@@ -31,12 +31,15 @@ create or replace trigger tr_reservation_ins_upd_6a
     before insert or update
     on RESERVATION
     for each row
+    declare v_available_places number;
         begin
-            if :NEW.STATUS<>'C' and :NEW.NO_TICKETS > (select coalesce(NO_AVAILABLE_PLACES,0) from TRIP where TRIP.TRIP_ID=:NEW.TRIP_ID) then
+            select coalesce(NO_AVAILABLE_PLACES,0) into v_available_places
+            from TRIP where TRIP.TRIP_ID=:NEW.TRIP_ID;
+            if :NEW.STATUS<>'C' and :NEW.NO_TICKETS > v_available_places then
                 RAISE_APPLICATION_ERROR(-20001, 'not enough available places');
             end if;
         end;
-
+/
 --zadanie 6b
 
 create or replace trigger tr_update_available_places
@@ -60,6 +63,7 @@ create or replace trigger tr_update_available_places
             WHERE t.TRIP_ID = :NEW.TRIP_ID;
         end if;
     end;
+/
 
 create or replace trigger tr_insert_available_places
     after insert
@@ -72,3 +76,4 @@ create or replace trigger tr_insert_available_places
             WHERE t.TRIP_ID = :NEW.TRIP_ID;
         end if;
     end;
+/

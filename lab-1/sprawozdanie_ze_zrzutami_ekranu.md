@@ -357,15 +357,15 @@ end;
 
 Widok vw_trip
 
-![alt text](view1.png)
+![alt text](images/ex1/view1.png)
 
 Widok vw_reservation
 
-![alt text](view2.png)
+![alt text](images/ex1/view2.png)
 
 Widok vw_available_trip
 
-## ![alt text](view3.png)
+## ![alt text](images/ex1/view3.png)
 
 # Zadanie 2 - funkcje
 
@@ -479,6 +479,7 @@ begin
 end;
 
 ```
+
 ### Działanie funkcji 1
 
 ![alt text](./images/ex2/fun-1-pol.png)
@@ -494,6 +495,7 @@ end;
 
 ![alt text](./images/ex2/fun-3-pol.png)
 ![alt text](./images/ex2/fun-3-out.png)
+
 ---
 
 # Zadanie 3 - procedury
@@ -573,11 +575,11 @@ as
     res_id int;
 begin
     curr_date := trunc(sysdate);
-    
+
     P_CHECK_PERSON_EXISTS(person_id);
 
     P_CHECK_RESERVATION_EXISTS(trip_id);
-    
+
     begin
         select 1 into exist
                 from VW_AVAILABLE_TRIP t
@@ -690,12 +692,14 @@ create procedure p_modify_max_no_places(trip_id in TRIP.TRIP_ID%type, max_no_pla
         where T.TRIP_ID=p_modify_max_no_places.trip_id;
     end;
 ```
+
 ### Działanie procedury 1
 
 ![alt text](./images/ex3/proc-1-pocz.png)
 ![alt text](./images/ex3/proc-1-pol.png)
 ![alt text](./images/ex3/proc-1-out.png)
 ![alt text](./images/ex3/proc-1-blad.png)
+
 ### Działanie procedury 2
 
 ![alt text](./images/ex3/proc-2-pocz.png)
@@ -714,6 +718,7 @@ create procedure p_modify_max_no_places(trip_id in TRIP.TRIP_ID%type, max_no_pla
 ![alt text](./images/ex3/proc-4-pocz.png)
 ![alt text](./images/ex3/proc-4-pol.png)
 ![alt text](./images/ex3/proc-4-out.png)
+
 ---
 
 # Zadanie 4 - triggery
@@ -852,6 +857,7 @@ end;
 ![alt text](./images/ex4/proc-4-pol.png)
 ![alt text](./images/ex4/proc-4-out.png)
 ![alt text](./images/ex4/proc-4-log.png)
+
 ---
 
 # Zadanie 5 - triggery
@@ -985,6 +991,7 @@ end;
 ![alt text](./images/ex5/proc-5-out.png)
 ![alt text](./images/ex5/proc-5-log.png)
 ![alt text](./images/ex5/proc-5-blad.png)
+
 ---
 
 # Zadanie 6
@@ -1026,15 +1033,52 @@ create or replace procedure p_trip_update_no_available_places is
 
 
 -- zmieniony trigger który korzysta z pola NO_AVAILABLE_PLACES zamiast z funkcji obliczającej wolne miejsca
-create or replace trigger tr_reservation_ins_upd_6
-before insert or update
-on RESERVATION
-for each row
+create trigger TR_RESERVATION_INS_UPD_6
+    instead of insert or update
+    on RESERVATION
+    for each row
+    compound trigger
+
+    type reservation_rec is record (
+                                       reservation_id reservation.reservation_id%type,
+                                       trip_id reservation.trip_id%type,
+                                       status reservation.status%type,
+                                       no_tickets reservation.no_tickets%type
+                                   );
+
+    type reservation_tab is table of reservation_rec index by binary_integer;
+    reservations reservation_tab;
+    ind number := 0;
+
+before each row is
+begin
+    ind := ind + 1;
+    reservations(ind).reservation_id := :new.reservation_id;
+    reservations(ind).trip_id := :new.trip_id;
+    reservations(ind).status := :new.status;
+    reservations(ind).no_tickets := :new.no_tickets;
+end before each row;
+
+    after statement is
     begin
-        if :NEW.STATUS<>'C' and :NEW.NO_TICKETS > (select coalesce(NO_AVAILABLE_PLACES,0) from TRIP where TRIP.TRIP_ID=:NEW.TRIP_ID) then
-            RAISE_APPLICATION_ERROR(-20001, 'not enough available places');
-        end if;
-    end;
+        for i in 1..ind loop
+                if reservations(i).status <> 'C' then
+                    declare
+                        available_places number;
+                    begin
+                        select no_available_places
+                        into available_places
+                        from trip t
+                        where t.id = reservations(i).trip_id;
+
+                        if reservations(i).no_tickets > available_places then
+                            raise_application_error(-20001, 'not enough available places');
+                        end if;
+                    end;
+                end if;
+            end loop;
+    end after statement;
+    end tr_reservation_ins_upd;
 ```
 
 ---
@@ -1075,7 +1119,7 @@ create or replace procedure p_modify_max_no_places_6a(trip_id in TRIP.TRIP_ID%ty
     end;
 
 
--- zmieniona procedura aktualizująca liczbę wolnych miejsc na wycieczce po modyfikacji rezerwacji
+-- zmieniona procedura aktualizująca liczbę wolnych miejsc na wycieczce po modyfikacji liczby biletów w rezerwacji
 create or replace procedure p_modify_reservation_6a(res_id in RESERVATION.RESERVATION_ID%type, pno_tickets number)
 as
     res_status varchar2(10);
@@ -1096,7 +1140,71 @@ begin
         set T.NO_AVAILABLE_PLACES = T.NO_AVAILABLE_PLACES - (pno_tickets - cur_no_tickets)
     where T.TRIP_ID=cur_trip_id;
 end;
+
+-- -- zmieniona procedura aktualizująca liczbę wolnych miejsc na wycieczce po modyfikacji statusu rezerwacji
+create procedure p_modify_reservation_status_6a (
+    v_reservation_id number,
+    v_status char
+) as
+    curr_date date;
+    no_tickets number := 0;
+    curr_res_status char(1);
+begin
+    curr_date := trunc(sysdate);
+    p_check_reservation_exists(v_reservation_id);
+
+    select r.status into curr_res_status
+    from reservation r
+    where r.reservation_id = v_reservation_id;
+
+    if curr_res_status = 'C' then
+        begin
+            select no_tickets into no_tickets
+            from vw_reservation t
+            where v_reservation_id = t.reservation_id
+              and t.no_tickets <= f_get_available_places(t.RESERVATION_ID);
+        exception
+            when no_data_found then
+                raise_application_error(-20001, 'No available places for reservation');
+        end;
+    end if;
+
+    update reservation
+    set status = v_status
+    where reservation_id = v_reservation_id;
+
+    insert into log (reservation_id, log_date, status, no_tickets)
+    values (
+               v_reservation_id,
+               curr_date,
+               v_status,
+               no_tickets
+           );
+
+    if curr_res_status = 'C' and v_status <> 'C' then
+        update trip
+           set no_available_places = no_available_places - no_tickets
+         where trip_id = v_trip_id;
+    elsif curr_res_status <> 'C' amd v_status = 'C' then
+        update trip
+           set no_available_places = no_available_places + no_tickets
+         where trip_id = v_trip_id;
+    end if;
+end;
 ```
+
+### Działanie procedury 1
+
+![alt text](./images/ex6/p1.png)
+
+### Działanie procedury 2
+
+![alt text](./images/ex6/p2.png)
+
+### Działanie procedury 3
+
+![alt text](./images/ex6/p3-table.png)
+![alt text](./images/ex6/p3.png)
 
 ---
 
@@ -1153,6 +1261,8 @@ create or replace trigger tr_insert_available_places
         end if;
     end;
 ```
+
+Modyfikacja procedur polega na cofnięciu zmian wprowadzonych w podpunkcie 6a.
 
 # Zadanie 7 - podsumowanie
 
