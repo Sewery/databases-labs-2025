@@ -1100,22 +1100,22 @@ Obsługę pola `no_available_places` należy zrealizować przy pomocy procedur
 
 ```sql
 -- zmieniona procedura aktualizująca liczbę wolnych miejsc po zmianie maksymalnej liczby miejsc na wycieczkę
-create or replace procedure p_modify_max_no_places_6a(trip_id in TRIP.TRIP_ID%type, max_no_places number)
+create procedure p_modify_max_no_places_6a(trip_id in TRIP.TRIP_ID%type, new_max_no_places number)
     as
         cur_max_places number;
         cur_av_places number;
     begin
         p_check_trip_exists(trip_id);
 
-        select MAX_NO_PLACES, NO_AVAILABLE_PLACES into cur_max_places, cur_av_places from TRIP T where T.TRIP_ID=trip_id;
+        select T.max_no_places, NO_AVAILABLE_PLACES into cur_max_places, cur_av_places from TRIP T where T.trip_id=p_modify_max_no_places_6a.trip_id;
 
-        if max_no_places-cur_max_places>cur_av_places then
+        if cur_max_places-new_max_no_places>cur_av_places then
             raise_application_error(-20001, 'max_no_places dif lower than no of available places');
         end if;
 
         update TRIP T
-            set T.MAX_NO_PLACES=max_no_places, T.NO_AVAILABLE_PLACES = cur_av_places - (max_no_places - cur_max_places)
-        where T.TRIP_ID=trip_id;
+            set T.max_no_places=new_max_no_places, T.NO_AVAILABLE_PLACES = cur_av_places + (new_max_no_places - cur_max_places)
+        where T.trip_id=p_modify_max_no_places_6a.trip_id;
     end;
 
 
