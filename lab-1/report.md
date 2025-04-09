@@ -1081,7 +1081,9 @@ end before each row;
     end tr_reservation_ins_upd;
 ```
 
----
+### Działanie triggera
+
+## ![alt text](./images/ex6/t1.png)
 
 # Zadanie 6a - procedury
 
@@ -1108,10 +1110,6 @@ create procedure p_modify_max_no_places_6a(trip_id in TRIP.TRIP_ID%type, new_max
         p_check_trip_exists(trip_id);
 
         select T.max_no_places, NO_AVAILABLE_PLACES into cur_max_places, cur_av_places from TRIP T where T.trip_id=p_modify_max_no_places_6a.trip_id;
-
-        if cur_max_places-new_max_no_places>cur_av_places then
-            raise_application_error(-20001, 'max_no_places dif lower than no of available places');
-        end if;
 
         update TRIP T
             set T.max_no_places=new_max_no_places, T.NO_AVAILABLE_PLACES = cur_av_places + (new_max_no_places - cur_max_places)
@@ -1157,17 +1155,12 @@ begin
     from reservation r
     where r.reservation_id = v_reservation_id;
 
-    if curr_res_status = 'C' then
-        begin
-            select no_tickets into no_tickets
-            from vw_reservation t
-            where v_reservation_id = t.reservation_id
-              and t.no_tickets <= f_get_available_places(t.RESERVATION_ID);
-        exception
-            when no_data_found then
-                raise_application_error(-20001, 'No available places for reservation');
-        end;
-    end if;
+
+    select no_tickets into no_tickets
+    from vw_reservation t
+    where v_reservation_id = t.reservation_id
+        and t.no_tickets <= f_get_available_places(t.RESERVATION_ID);
+
 
     update reservation
     set status = v_status
