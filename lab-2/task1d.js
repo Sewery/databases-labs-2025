@@ -96,3 +96,40 @@ db.OrdersInfo.aggregate([
     }
   }
 ])
+
+//zad1d customerinfodb.CustomerInfo.aggregate([
+
+  { $unwind: "$Orders" },
+  {$unwind: "$Orders.Orderdetails"},
+  { $group: {
+      _id: {
+        CustomerID: "$CustomerID",
+        CompanyName: "$CompanyName",
+        Year:  { $year:  "$Orders.Dates.OrderDate" },
+        Month: { $month: "$Orders.Dates.OrderDate" }
+      },
+      Total: { $sum: "$Orders.Orderdetails.Value" }
+    }
+  },
+
+  { $group: {
+      _id: "$_id.CustomerID",
+      CompanyName: { $first: "$_id.CompanyName" },
+      Sale: {
+        $push: {
+          Year:  "$_id.Year",
+          Month: "$_id.Month",
+          Total: "$Total"
+        }
+      }
+    }
+  },
+
+  { $project: {
+      _id:         0,
+      CustomerID:  "$_id",
+      CompanyName: 1,
+      Sale:        1
+    }
+  }
+])
