@@ -877,37 +877,61 @@ db.createCollection("Reservation1", {
 Wpisanie danych do modelu 1:
 
 ```js
-/ a) Company1
-const companyIds = db.Company1.insertMany([
-  { name: "TravelCo",      address: "ul. Podróżnicza 10, Warszawa" },
-  { name: "AdventureTime", address: "ul. Wyprawowa 5, Kraków" }
-]).insertedIds;
+var resTravelCo  = db.Company1.insertOne({ name: "TravelCo",      address: "ul. Podróżnicza 10, Warszawa" });
+var resAdventure = db.Company1.insertOne({ name: "AdventureTime", address: "ul. Wyprawowa 5, Kraków" });
+var compTravelCoId  = resTravelCo.insertedId;
+var compAdventureId = resAdventure.insertedId;
 
-// b) Trip1
-const tData = [
-  { name: "Mazury Tour", destination: "Mazury", date: ISODate("2025-03-10"), max_places:20, companyId: companyIds[0] },
-  { name: "Tatry Hike",  destination: "Tatry", date: ISODate("2025-07-15"), max_places:15, companyId: companyIds[0] },
-  { name: "City Break",   destination: "Wrocław", date: ISODate("2025-05-20"), max_places:25, companyId: companyIds[1] }
-];
-const tripIds = db.Trip1.insertMany(tData).insertedIds;
 
-// c) Person1
-const personIds = db.Person1.insertMany([
-  { firstname: "Anna", lastname: "Kowalska" },
-  { firstname: "Piotr", lastname: "Nowak" },
-  { firstname: "Ewa", lastname: "Wiśniewska" }
-]).insertedIds;
+// 2b) Wycieczki 
+var resMazury = db.Trip1.insertOne({
+  name:        "Mazury Tour",
+  destination: "Mazury",
+  date:        ISODate("2025-03-10"),
+  max_places:  20,
+  companyId:   compTravelCoId
+});
+var resTatry = db.Trip1.insertOne({
+  name:        "Tatry Hike",
+  destination: "Tatry",
+  date:        ISODate("2025-07-15"),
+  max_places:  15,
+  companyId:   compTravelCoId
+});
+var resCity = db.Trip1.insertOne({
+  name:        "City Break",
+  destination: "Wrocław",
+  date:        ISODate("2025-05-20"),
+  max_places:  25,
+  companyId:   compAdventureId
+});
+var tripMazuryId = resMazury.insertedId;
+var tripTatryId  = resTatry.insertedId;
+var tripCityId   = resCity.insertedId;
 
-// d) Rating1
+
+// 2c) Osoby
+// Tu możemy użyć insertMany, ale i tak zrobimy extract na każdy index
+var resAnna  = db.Person1.insertOne({ firstname: "Anna",  lastname: "Kowalska" });
+var resPiotr = db.Person1.insertOne({ firstname: "Piotr", lastname: "Nowak" });
+var resEwa   = db.Person1.insertOne({ firstname: "Ewa",   lastname: "Wiśniewska" });
+
+var persAnnaId  = resAnna.insertedId;
+var persPiotrId = resPiotr.insertedId;
+var persEwaId   = resEwa.insertedId;
+
+
+// 2d) Oceny
 db.Rating1.insertMany([
-  { tripId: tripIds[0], personId: personIds[0], rating:5 },
-  { tripId: tripIds[0], personId: personIds[1], rating:4 }
+  { tripId: tripMazuryId, personId: persAnnaId,  rating: 5 },
+  { tripId: tripMazuryId, personId: persPiotrId, rating: 4 }
 ]);
 
-// e) Reservation1
+
+// 2e) Rezerwacje
 db.Reservation1.insertMany([
-  { tripId: tripIds[0], personId: personIds[0], no_tickets:2 },
-  { tripId: tripIds[1], personId: personIds[1], no_tickets:1 }
+  { tripId: tripMazuryId, personId: persAnnaId,  no_tickets: 2 },
+  { tripId: tripTatryId,  personId: persPiotrId, no_tickets: 1 }
 ]);
 ```
 
@@ -1074,157 +1098,181 @@ db.createCollection("Reservation3", {
 Wpisanie danych do modelu 3:
 
 ```js
-// a) Wstawiamy Company3
-const companyInsert = db.Company3.insertMany([
-  {
-    name: "TravelCo",
-    address: "ul. Podróżnicza 10, Warszawa",
-    trips: [],
-  },
-  {
-    name: "AdventureTime",
-    address: "ul. Wyprawowa 5, Kraków",
-    trips: [],
-  },
-]);
-const [comp1Id, comp2Id] = Object.values(companyInsert.insertedIds);
+// — 2a) Wstawiamy firmy 
 
-// b) Wstawiamy Trip3 i zbieramy ich _id
-const trips = [
-  {
-    name: "Mazury Tour",
-    destination: "Mazury",
-    date: ISODate("2025-03-10"),
-    max_places: 20,
-    companyId: comp1Id,
-  },
-  {
-    name: "Tatry Hike",
-    destination: "Tatry",
-    date: ISODate("2025-07-15"),
-    max_places: 15,
-    companyId: comp1Id,
-  },
-  {
-    name: "City Break",
-    destination: "Wrocław",
-    date: ISODate("2025-05-20"),
-    max_places: 25,
-    companyId: comp2Id,
-  },
-];
-const tripInsert = db.Trip3.insertMany(trips);
-const [trip1Id, trip2Id, trip3Id] = Object.values(tripInsert.insertedIds);
+var resTravelCo  = db.Company3.insertOne({
+  name:    "TravelCo",
+  address: "ul. Podróżnicza 10, Warszawa",
+  trips:   []
+});
+var comp1Id = resTravelCo.insertedId;
 
-// c) Zaktualizuj Company3.trips, aby wstawić tripId
+var resAdventure = db.Company3.insertOne({
+  name:    "AdventureTime",
+  address: "ul. Wyprawowa 5, Kraków",
+  trips:   []
+});
+var comp2Id = resAdventure.insertedId;
+
+
+// — 2b) Wstawiamy wycieczki do Trip3
+
+var resMazury = db.Trip3.insertOne({
+  name:         "Mazury Tour",
+  destination:  "Mazury",
+  date:         ISODate("2025-03-10"),
+  max_places:   20,
+  companyId:    comp1Id,
+  available_places: 20,
+  number_of_ratings: 0,
+  average_rating:   NumberDecimal("0"),
+  ratings:      []
+});
+var trip1Id = resMazury.insertedId;
+
+var resTatry = db.Trip3.insertOne({
+  name:         "Tatry Hike",
+  destination:  "Tatry",
+  date:         ISODate("2025-07-15"),
+  max_places:   15,
+  companyId:    comp1Id,
+  available_places: 15,
+  number_of_ratings: 0,
+  average_rating:   NumberDecimal("0"),
+  ratings:      []
+});
+var trip2Id = resTatry.insertedId;
+
+var resCity = db.Trip3.insertOne({
+  name:         "City Break",
+  destination:  "Wrocław",
+  date:         ISODate("2025-05-20"),
+  max_places:   25,
+  companyId:    comp2Id,
+  available_places: 25,
+  number_of_ratings: 0,
+  average_rating:   NumberDecimal("0"),
+  ratings:      []
+});
+var trip3Id = resCity.insertedId;
+
+
+// — 2c) Uaktualniamy Company3.trips 
+
 db.Company3.updateOne(
   { _id: comp1Id },
-  {
-    $set: {
+  { $set: {
       trips: [
         {
-          tripId: trip1Id,
-          name: "Mazury Tour",
+          tripId:      trip1Id,
+          name:        "Mazury Tour",
           destination: "Mazury",
-          date: ISODate("2025-03-10"),
-          max_places: 20,
+          date:        ISODate("2025-03-10"),
+          max_places:  20
         },
         {
-          tripId: trip2Id,
-          name: "Tatry Hike",
+          tripId:      trip2Id,
+          name:        "Tatry Hike",
           destination: "Tatry",
-          date: ISODate("2025-07-15"),
-          max_places: 15,
-        },
-      ],
-    },
-  }
+          date:        ISODate("2025-07-15"),
+          max_places:  15
+        }
+      ]
+  }}
 );
+
 db.Company3.updateOne(
   { _id: comp2Id },
-  {
-    $set: {
+  { $set: {
       trips: [
         {
-          tripId: trip3Id,
-          name: "City Break",
+          tripId:      trip3Id,
+          name:        "City Break",
           destination: "Wrocław",
-          date: ISODate("2025-05-20"),
-          max_places: 25,
-        },
-      ],
-    },
-  }
+          date:        ISODate("2025-05-20"),
+          max_places:  25
+        }
+      ]
+  }}
 );
 
-// d) Wstawiamy Person3
-db.Person3.insertMany([
-  { firstname: "Anna", lastname: "Kowalska", reservations: [] },
-  { firstname: "Piotr", lastname: "Nowak", reservations: [] },
-  { firstname: "Ewa", lastname: "Wiśniewska", reservations: [] },
-]);
-const personInsert = db.Person3.find().limit(3).toArray();
-const [p1, p2, p3] = personInsert;
 
-// e) Wstawiamy Reservation3 i aktualizujemy Person3.reservations
-const res1 = db.Reservation3.insertOne({
-  personId: p1._id,
-  tripId: trip1Id,
-  no_tickets: 2,
-});
-const res2 = db.Reservation3.insertOne({
-  personId: p2._id,
-  tripId: trip1Id,
-  no_tickets: 1,
-});
+// — 2d) Wstawiamy osoby do Person3
 
-// Aktualizujemy reservations dla Person3
-[res1, res2].forEach(({ insertedId, ops }, idx) => {
-  const r = ops[0];
-  const person = idx === 0 ? p1 : p2;
-  const trip = idx === 0 ? trips[0] : trips[0];
-  db.Person3.updateOne(
-    { _id: person._id },
-    {
-      $push: {
-        reservations: {
-          reservationId: insertedId,
-          tripId: r.tripId,
-          name: trip.name,
-          destination: trip.destination,
-          date: trip.date,
-          no_tickets: r.no_tickets,
-          rating: null,
-          companyId: r.companyId,
-          companyName: r.companyId.equals(comp1Id)
-            ? "TravelCo"
-            : "AdventureTime",
-        },
-      },
-    }
-  );
-});
+var resAnna  = db.Person3.insertOne({ firstname: "Anna",  lastname: "Kowalska",   reservations: [] });
+var p1Id     = resAnna.insertedId;
+var resPiotr = db.Person3.insertOne({ firstname: "Piotr", lastname: "Nowak",      reservations: [] });
+var p2Id     = resPiotr.insertedId;
+var resEwa   = db.Person3.insertOne({ firstname: "Ewa",   lastname: "Wiśniewska", reservations: [] });
+var p3Id     = resEwa.insertedId;
 
-// f) Wstawiamy ratings dla Trip3
+
+// — 2e) Rezerwacje
+
+var r1 = db.Reservation3.insertOne({ personId: p1Id, tripId: trip1Id, no_tickets: 2 }).insertedId;
+db.Person3.updateOne(
+  { _id: p1Id },
+  { $push: {
+      reservations: {
+        reservationId: r1,
+        tripId:        trip1Id,
+        name:          "Mazury Tour",
+        destination:   "Mazury",
+        date:          ISODate("2025-03-10"),
+        no_tickets:    2,
+        rating:        null,
+        companyId:     comp1Id,
+        companyName:   "TravelCo"
+      }
+  }}
+);
+
+var r2 = db.Reservation3.insertOne({ personId: p2Id, tripId: trip1Id, no_tickets: 1 }).insertedId;
+db.Person3.updateOne(
+  { _id: p2Id },
+  { $push: {
+      reservations: {
+        reservationId: r2,
+        tripId:        trip1Id,
+        name:          "Mazury Tour",
+        destination:   "Mazury",
+        date:          ISODate("2025-03-10"),
+        no_tickets:    1,
+        rating:        null,
+        companyId:     comp1Id,
+        companyName:   "TravelCo"
+      }
+  }}
+);
+
+
+// — 2f) Oceny na Trip3: updateOne z $push i $each —
+
 db.Trip3.updateOne(
   { _id: trip1Id },
   {
     $push: {
-      ratings: [
-        {
-          personId: p1._id,
-          firstname: p1.firstname,
-          lastname: p1.lastname,
-          rating: 5,
-        },
-        {
-          personId: p2._id,
-          firstname: p2.firstname,
-          lastname: p2.lastname,
-          rating: 4,
-        },
-      ],
+      ratings: {
+        $each: [
+          {
+            personId:  p1Id,
+            firstname: "Anna",
+            lastname:  "Kowalska",
+            rating:    5
+          },
+          {
+            personId:  p2Id,
+            firstname: "Piotr",
+            lastname:  "Nowak",
+            rating:    4
+          }
+        ]
+      }
     },
+    $set: {
+      average_rating: NumberDecimal(4.5),
+      number_of_ratings: 2
+    }
   }
 );
 ```
@@ -1246,14 +1294,14 @@ db.Company1.aggregate([
   },
 ]);
 
-// 3.1. Pobranie wszystkich wycieczek dla firmy o _id = comp1Id (Model3 - zagnieżdżony)
+// 3.1. Pobranie wszystkich wycieczek dla firmy o _id = comp3Id (Model3 - zagnieżdżony)
 const comp3Id = db.Company3.findOne()._id;
 db.Company3.findOne({ _id: comp3Id }, { _id: 0, name: 1, trips: 1 });
 
-// 1.2. Pobranie informacji o rezerwacjach osoby (_id = person1) wraz z danymi o wycieczkach i ocenach (Model1)
-const person1 = db.Person1Id.findOne()._id;
+// 1.2. Pobranie informacji o rezerwacjach osoby (_id = person1Id) wraz z danymi o wycieczkach i ocenach (Model1)
+const person1Id = db.Person1.findOne()._id;
 db.Person1.aggregate([
-  { $match: { _id: person1 } },
+  { $match: { _id: person1Id } },
   {
     $lookup: {
       from: "Reservation1",
@@ -1308,7 +1356,7 @@ db.Person1.aggregate([
   },
 ]);
 
-// 3.2. Pobranie informacji o rezerwacjach osoby (_id = person1) wraz z danymi o wycieczkach (Model3)
+// 3.2. Pobranie informacji o rezerwacjach osoby (_id = person3Id) wraz z danymi o wycieczkach (Model3)
 const person3Id = db.Person3.findOne()._id;
 db.Person3.findOne(
   { _id: person3Id },
@@ -1327,7 +1375,7 @@ const newRes = db.Reservation1.insertOne({
 // a) do kolekcji rezerwacji
 const trip3Id = db.Trip3.findOne()._id;
 const res3 = db.Reservation3.insertOne({
-  personId: person1,
+  personId: person1Id,
   tripId: trip3Id,
   no_tickets: 2,
 });
@@ -1336,7 +1384,7 @@ const tripInfo = db.Trip3.findOne({ _id: trip3Id });
 const compInfo = db.Company3.findOne({ _id: tripInfo.companyId });
 
 db.Person3.updateOne(
-  { _id: person1 },
+  { _id: person1Id },
   {
     $push: {
       reservations: {
@@ -1356,7 +1404,11 @@ db.Person3.updateOne(
 
 // c) aktualizacja available_places w Trip3
 const allRes = db.Reservation3.find({ tripId: tripInfo._id }).toArray();
-const totalTickets = allRes.reduce((sum, r) => sum + r.no_tickets, 0);
+let totalTickets = 0;
+for (let r of allRes) {
+  totalTickets += r.no_tickets;
+}
+
 db.Trip3.updateOne(
   { _id: tripInfo._id },
   { $set: { available_places: tripInfo.max_places - totalTickets } }
