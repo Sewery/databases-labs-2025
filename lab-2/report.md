@@ -877,13 +877,14 @@ db.createCollection("Reservation1", {
 Wpisanie danych do modelu 1:
 
 ```js
+// 2a) Firmy – każda pojedynczo, z odczytem insertedId
 var resTravelCo  = db.Company1.insertOne({ name: "TravelCo",      address: "ul. Podróżnicza 10, Warszawa" });
 var resAdventure = db.Company1.insertOne({ name: "AdventureTime", address: "ul. Wyprawowa 5, Kraków" });
 var compTravelCoId  = resTravelCo.insertedId;
 var compAdventureId = resAdventure.insertedId;
 
 
-// 2b) Wycieczki 
+// 2b) Wycieczki – każda pojedynczo, z odczytem insertedId
 var resMazury = db.Trip1.insertOne({
   name:        "Mazury Tour",
   destination: "Mazury",
@@ -910,7 +911,7 @@ var tripTatryId  = resTatry.insertedId;
 var tripCityId   = resCity.insertedId;
 
 
-// 2c) Osoby
+// 2c) Osoby – każda pojedynczo lub grupowo, ale potem rozbijamy wyniki
 // Tu możemy użyć insertMany, ale i tak zrobimy extract na każdy index
 var resAnna  = db.Person1.insertOne({ firstname: "Anna",  lastname: "Kowalska" });
 var resPiotr = db.Person1.insertOne({ firstname: "Piotr", lastname: "Nowak" });
@@ -1003,7 +1004,7 @@ db.createCollection("Trip3", {
         },
         available_places: { bsonType: "int" },
         number_of_ratings: { bsonType: "int" },
-        average_rating: { bsonType: "double" },
+        average_rating: { bsonType: "decimal" },
         ratings: {
           bsonType: "array",
           items: {
