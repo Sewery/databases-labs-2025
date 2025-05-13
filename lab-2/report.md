@@ -519,7 +519,7 @@ db.orders.aggregate([
   ]);
 
 ```
-![alt text](./readme_ss/a.png)
+![alt text](./readme_ss/1a.png)
 b)
 
 ```js
