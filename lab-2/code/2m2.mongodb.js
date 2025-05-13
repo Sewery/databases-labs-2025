@@ -1,4 +1,6 @@
-//Model 2 
+// MODEL 2 WSZYSTKIE INFORMACJE ZAGNIEŻDŻONE
+// Modele PersonInfo/TripInfo to wygodna, szybka do odczytu „fotografia” powiązanych danych.
+
 /// TripInfo – kolekcja agregująca dane o wycieczce, firmie, rezerwacjach i ocenach zagnieżdżonych u osoby (osoby z ilością miejsc i oceną)
 db.createCollection("TripInfo", {
     validator: {
@@ -221,7 +223,7 @@ db.createCollection("PersonInfo", {
     { $merge: { into: "PersonInfo" } }
   ]);
 //wypełnienie kolekcji TripInfo danymi z modelu 1
-  db.Trip1.aggregate([
+db.Trip1.aggregate([
     {
       $lookup: {
         from: "Company1",
@@ -277,14 +279,19 @@ db.createCollection("PersonInfo", {
                 ]
               },
               rating: {
-                $arrayElemAt: [
-                  "$ratings.rating",
-                  { $indexOfArray: ["$ratings.personId", "$$res.personId"] }
-                ]
+                $ifNull: [
+                    {
+                      $arrayElemAt: [
+                        "$ratings.rating",
+                        { $indexOfArray: ["$ratings.tripId", "$$res.tripId"] }
+                      ]
+                    },
+                    null
+                  ]
               }
-            }
           }
         }
+      }
       }
     },
     {
@@ -302,7 +309,7 @@ db.createCollection("PersonInfo", {
       }
     },
     { $merge: { into: "TripInfo", whenMatched: "replace", whenNotMatched: "insert" } }
-  ]);
+  ]);  
 //c) 
 // Wyświetl wszystkie wycieczki, które dana osoba oceniła na 5
 db.PersonInfo.aggregate([
@@ -316,21 +323,21 @@ db.PersonInfo.aggregate([
     { $match: { firstname: "Anna", lastname: "Kowalska" } },
     { $project: { liczba_rezerwacji: { $size: "$reservations" } } }
   ])
-//Wyszukaj wycieczki, gdzie ktoś zarezerwował więcej niż 2 miejsca
+//Wyszukaj wycieczki, gdzie ktoś zarezerwował więcej niż 1 miejsce
 db.TripInfo.find(
-    { "reservations.no_tickets": { $gt: 2 } },
+    { "reservations.no_tickets": { $gt: 1 } },
     { name: 1, "reservations.$": 1 }
   )
-//Wyszukaj wycieczki,które odbyły się w 2023 roku i zostały zorganizowane przez firmę TravelCo
+//Wyszukaj wycieczki,które odbyły się w marcu 2025 roku i zostały zorganizowane przez firmę TravelCo
 db.TripInfo.find(
     {
       "company.name": "TravelCo",
       date: {
-        $gte: ISODate("2023-01-01T00:00:00Z"),
-        $lt: ISODate("2024-01-01T00:00:00Z")
+        $gte: ISODate("2025-03-01T00:00:00Z"),
+        $lt: ISODate("2025-04-01T00:00:00Z")
       }
     },
     {
-      reservations: 0 
+      reservations: 0
     }
 )

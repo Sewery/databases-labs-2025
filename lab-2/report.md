@@ -913,33 +913,368 @@ var tripCityId   = resCity.insertedId;
 
 // 2c) Osoby – każda pojedynczo lub grupowo, ale potem rozbijamy wyniki
 // Tu możemy użyć insertMany, ale i tak zrobimy extract na każdy index
-var resAnna  = db.Person1.insertOne({ firstname: "Anna",  lastname: "Kowalska" });
+vvar resAnna  = db.Person1.insertOne({ firstname: "Anna",  lastname: "Kowalska" });
 var resPiotr = db.Person1.insertOne({ firstname: "Piotr", lastname: "Nowak" });
 var resEwa   = db.Person1.insertOne({ firstname: "Ewa",   lastname: "Wiśniewska" });
+var resJan   = db.Person1.insertOne({ firstname: "Jan",   lastname: "Kowalczyk" });
+var resMaria = db.Person1.insertOne({ firstname: "Maria", lastname: "Lewandowska" });
+var resTomasz = db.Person1.insertOne({ firstname: "Tomasz", lastname: "Lis" });
 
 var persAnnaId  = resAnna.insertedId;
 var persPiotrId = resPiotr.insertedId;
 var persEwaId   = resEwa.insertedId;
+var persJanId    = resJan.insertedId;
+var persMariaId  = resMaria.insertedId;
+var persTomaszId = resTomasz.insertedId;
 
 
 // 2d) Oceny
 db.Rating1.insertMany([
   { tripId: tripMazuryId, personId: persAnnaId,  rating: 5 },
-  { tripId: tripMazuryId, personId: persPiotrId, rating: 4 }
+  { tripId: tripTatryId, personId: persAnnaId,  rating: 2 },
+  { tripId: tripMazuryId, personId: persPiotrId, rating: 4 },
+  { tripId: tripTatryId,  personId: persJanId,   rating: 3 },
+  { tripId: tripCityId,   personId: persMariaId, rating: 5 },
+  { tripId: tripCityId,   personId: persTomaszId, rating: 2 }
 ]);
 
 
 // 2e) Rezerwacje
 db.Reservation1.insertMany([
-  { tripId: tripMazuryId, personId: persAnnaId,  no_tickets: 2 },
-  { tripId: tripTatryId,  personId: persPiotrId, no_tickets: 1 }
+  { tripId: tripMazuryId, personId: persAnnaId,   no_tickets: 2 },
+  { tripId: tripTatryId, personId: persAnnaId,  no_tickets: 2 },
+  { tripId: tripTatryId,  personId: persPiotrId,  no_tickets: 1 },
+  { tripId: tripTatryId,  personId: persJanId,    no_tickets: 3 },
+  { tripId: tripCityId,   personId: persMariaId,  no_tickets: 4 },
+  { tripId: tripCityId,   personId: persTomaszId, no_tickets: 1 },
+  { tripId: tripMazuryId, personId: persEwaId,    no_tickets: 2 }
 ]);
 ```
+**Model 2**  
+
+Wszystkie dane zagnieżdżone w dwóch kolekcjach: **PersonInfo** i **TripInfo**
+
+ * a) Tworzenie kolekcji:
+```sql
+db.createCollection("TripInfo", {
+    validator: {
+      $jsonSchema: {
+        bsonType: "object",
+        required: [
+          "name",
+          "destination",
+          "date",
+          "max_places",
+          "company",
+          "reservations"
+        ],
+        properties: {
+          _id: { bsonType: "objectId" },
+          name: { bsonType: "string", description: "string required" },
+          destination: { bsonType: "string", description: "string required" },
+          date: { bsonType: "date", description: "date required" },
+          max_places: {
+            bsonType: "int",
+            minimum: 1,
+            description: "int>=1 required"
+          },
+          company: {
+            bsonType: "object",
+            required: ["_id", "name", "address"],
+            properties: {
+              _id: { bsonType: "objectId", description: "fkey to Company1._id" },
+              name: { bsonType: "string", description: "string required" },
+              address: { bsonType: "string", description: "string required" }
+            }
+          },
+          reservations: {
+            bsonType: "array",
+            description: "osoby z ilością miejsc i oceną",
+            items: {
+              bsonType: "object",
+              required: ["personId", "firstname", "lastname", "no_tickets", "rating"],
+              properties: {
+                personId: { bsonType: "objectId", description: "fkey to Person1._id" },
+                firstname: { bsonType: "string", description: "string required" },
+                lastname: { bsonType: "string", description: "string required" },
+                no_tickets: { bsonType: "int", minimum: 1 },
+                rating: { bsonType: ["int", "null"], minimum: 1, maximum: 5 }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+// PersonInfo – kolekcja agregująca dane o osobie, jej rezerwacjach (z podstawowymi danymi o wycieczce i firmie) oraz ocenach tej osoby
+db.createCollection("PersonInfo", {
+    validator: {
+      $jsonSchema: {
+        bsonType: "object",
+        required: [
+          "firstname",
+          "lastname",
+          "reservations"
+        ],
+        properties: {
+          _id: { bsonType: "objectId" },
+          firstname: { bsonType: "string", description: "string required" },
+          lastname: { bsonType: "string", description: "string required" },
+          reservations: {
+            bsonType: "array",
+            description: "rezerwacje osoby z danymi o wycieczce, firmie i oceną",
+            items: {
+              bsonType: "object",
+              required: [
+                "tripId",
+                "name",
+                "destination",
+                "date",
+                "company",
+                "no_tickets",
+                "rating"
+              ],
+              properties: {
+                tripId: { bsonType: "objectId", description: "fkey to Trip1._id" },
+                name: { bsonType: "string", description: "string required" },
+                destination: { bsonType: "string", description: "string required" },
+                date: { bsonType: "date", description: "date required" },
+                company: {
+                  bsonType: "object",
+                  required: ["_id", "name", "address"],
+                  properties: {
+                    _id: { bsonType: "objectId", description: "fkey to Company1._id" },
+                    name: { bsonType: "string", description: "string required" },
+                    address: { bsonType: "string", description: "string required" }
+                  }
+                },
+                no_tickets: { bsonType: "int", minimum: 1 },
+                rating: { bsonType: ["int", "null"], minimum: 1, maximum: 5 }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+```
+ * b) Wypełnienie kolekcji danymi z modelu 1
+```sql
+//Wypełnienie kolekcji PersonInfo
+  db.Person1.aggregate([
+    {
+      $lookup: {
+        from: "Reservation1",
+        localField: "_id",
+        foreignField: "personId",
+        as: "reservations"
+      }
+    },
+    {
+      $lookup: {
+        from: "Trip1",
+        localField: "reservations.tripId",
+        foreignField: "_id",
+        as: "trips"
+      }
+    },
+    {
+      $lookup: {
+        from: "Company1",
+        localField: "trips.companyId",
+        foreignField: "_id",
+        as: "companies"
+      }
+    },
+    {
+      $lookup: {
+        from: "Rating1",
+        localField: "_id",
+        foreignField: "personId",
+        as: "ratings"
+      }
+    },
+    {
+      $addFields: {
+        reservations: {
+          $map: {
+            input: "$reservations",
+            as: "res",
+            in: {
+              tripId: "$$res.tripId",
+              no_tickets: "$$res.no_tickets",
+              // Pobierz dane o wycieczce
+              name: {
+                $arrayElemAt: [
+                  "$trips.name",
+                  { $indexOfArray: ["$trips._id", "$$res.tripId"] }
+                ]
+              },
+              destination: {
+                $arrayElemAt: [
+                  "$trips.destination",
+                  { $indexOfArray: ["$trips._id", "$$res.tripId"] }
+                ]
+              },
+              date: {
+                $arrayElemAt: [
+                  "$trips.date",
+                  { $indexOfArray: ["$trips._id", "$$res.tripId"] }
+                ]
+              },
+              // Pobierz dane o firmie
+              company: {
+                _id: {
+                  $arrayElemAt: [
+                    "$companies._id",
+                    { $indexOfArray: ["$companies._id",
+                      { $arrayElemAt: [
+                        "$trips.companyId",
+                        { $indexOfArray: ["$trips._id", "$$res.tripId"] }
+                      ]}
+                    ]}
+                  ]
+                },
+                name: {
+                  $arrayElemAt: [
+                    "$companies.name",
+                    { $indexOfArray: ["$companies._id",
+                      { $arrayElemAt: [
+                        "$trips.companyId",
+                        { $indexOfArray: ["$trips._id", "$$res.tripId"] }
+                      ]}
+                    ]}
+                  ]
+                },
+                address: {
+                  $arrayElemAt: [
+                    "$companies.address",
+                    { $indexOfArray: ["$companies._id",
+                      { $arrayElemAt: [
+                        "$trips.companyId",
+                        { $indexOfArray: ["$trips._id", "$$res.tripId"] }
+                      ]}
+                    ]}
+                  ]
+                }
+              },
+              // Pobierz ocenę tej osoby dla tej wycieczki
+              rating: {
+                $arrayElemAt: [
+                  "$ratings.rating",
+                  { $indexOfArray: ["$ratings.tripId", "$$res.tripId"] }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        firstname: 1,
+        lastname: 1,
+        reservations: 1
+      }
+    },
+    { $merge: { into: "PersonInfo" } }
+  ]);
+//Wypełnienie kolekcji TripInfo 
+db.Trip1.aggregate([
+    {
+      $lookup: {
+        from: "Company1",
+        localField: "companyId",
+        foreignField: "_id",
+        as: "company"
+      }
+    },
+    { $unwind: "$company" },
+    {
+      $lookup: {
+        from: "Reservation1",
+        localField: "_id",
+        foreignField: "tripId",
+        as: "reservations"
+      }
+    },
+    {
+      $lookup: {
+        from: "Person1",
+        localField: "reservations.personId",
+        foreignField: "_id",
+        as: "persons"
+      }
+    },
+    {
+      $lookup: {
+        from: "Rating1",
+        localField: "_id",
+        foreignField: "tripId",
+        as: "ratings"
+      }
+    },
+    {
+      $addFields: {
+        reservations: {
+          $map: {
+            input: "$reservations",
+            as: "res",
+            in: {
+              personId: "$$res.personId",
+              no_tickets: "$$res.no_tickets",
+              firstname: {
+                $arrayElemAt: [
+                  "$persons.firstname",
+                  { $indexOfArray: ["$persons._id", "$$res.personId"] }
+                ]
+              },
+              lastname: {
+                $arrayElemAt: [
+                  "$persons.lastname",
+                  { $indexOfArray: ["$persons._id", "$$res.personId"] }
+                ]
+              },
+              rating: {
+                $ifNull: [
+                    {
+                      $arrayElemAt: [
+                        "$ratings.rating",
+                        { $indexOfArray: ["$ratings.tripId", "$$res.tripId"] }
+                      ]
+                    },
+                    null
+                  ]
+              }
+          }
+        }
+      }
+      }
+    },
+    {
+      $project: {
+        name: 1,
+        destination: 1,
+        date: 1,
+        max_places: 1,
+        company: {
+          _id: "$company._id",
+          name: "$company.name",
+          address: "$company.address"
+        },
+        reservations: 1
+      }
+    },
+    { $merge: { into: "TripInfo", whenMatched: "replace", whenNotMatched: "insert" } }
+  ]);  
+```
+##
 
 **Model 3**
 
-Zagnieżdżone tablice wewnątrz oryginalnych kolekcji
+Rozwiązanie pośrednie z zagnieżdżonymi tablicami wewnątrz oryginalnych kolekcji oraz częsciowo znormalizowane
 
+ * a) Tworzenie kolekcji Company3, Reservation3, Person3 i Trip3
 ```js
 // 1. Company3 – firmy z zagnieżdżonymi wycieczkami
 db.createCollection("Company3", {
@@ -1004,7 +1339,7 @@ db.createCollection("Trip3", {
         },
         available_places: { bsonType: "int" },
         number_of_ratings: { bsonType: "int" },
-        average_rating: { bsonType: "decimal" },
+        average_rating: { bsonType: "double" },
         ratings: {
           bsonType: "array",
           items: {
@@ -1096,193 +1431,235 @@ db.createCollection("Reservation3", {
 });
 ```
 
-Wpisanie danych do modelu 3:
+ * b) Wypełnienie kolekcji danymi z modelu 1
 
 ```js
-// — 2a) Wstawiamy firmy 
+// Wstawiamy firmy 
 
-var resTravelCo  = db.Company3.insertOne({
-  name:    "TravelCo",
-  address: "ul. Podróżnicza 10, Warszawa",
-  trips:   []
-});
-var comp1Id = resTravelCo.insertedId;
-
-var resAdventure = db.Company3.insertOne({
-  name:    "AdventureTime",
-  address: "ul. Wyprawowa 5, Kraków",
-  trips:   []
-});
-var comp2Id = resAdventure.insertedId;
-
-
-// — 2b) Wstawiamy wycieczki do Trip3
-
-var resMazury = db.Trip3.insertOne({
-  name:         "Mazury Tour",
-  destination:  "Mazury",
-  date:         ISODate("2025-03-10"),
-  max_places:   20,
-  companyId:    comp1Id,
-  available_places: 20,
-  number_of_ratings: 0,
-  average_rating:   NumberDecimal("0"),
-  ratings:      []
-});
-var trip1Id = resMazury.insertedId;
-
-var resTatry = db.Trip3.insertOne({
-  name:         "Tatry Hike",
-  destination:  "Tatry",
-  date:         ISODate("2025-07-15"),
-  max_places:   15,
-  companyId:    comp1Id,
-  available_places: 15,
-  number_of_ratings: 0,
-  average_rating:   NumberDecimal("0"),
-  ratings:      []
-});
-var trip2Id = resTatry.insertedId;
-
-var resCity = db.Trip3.insertOne({
-  name:         "City Break",
-  destination:  "Wrocław",
-  date:         ISODate("2025-05-20"),
-  max_places:   25,
-  companyId:    comp2Id,
-  available_places: 25,
-  number_of_ratings: 0,
-  average_rating:   NumberDecimal("0"),
-  ratings:      []
-});
-var trip3Id = resCity.insertedId;
-
-
-// — 2c) Uaktualniamy Company3.trips 
-
-db.Company3.updateOne(
-  { _id: comp1Id },
-  { $set: {
-      trips: [
-        {
-          tripId:      trip1Id,
-          name:        "Mazury Tour",
-          destination: "Mazury",
-          date:        ISODate("2025-03-10"),
-          max_places:  20
-        },
-        {
-          tripId:      trip2Id,
-          name:        "Tatry Hike",
-          destination: "Tatry",
-          date:        ISODate("2025-07-15"),
-          max_places:  15
-        }
-      ]
-  }}
-);
-
-db.Company3.updateOne(
-  { _id: comp2Id },
-  { $set: {
-      trips: [
-        {
-          tripId:      trip3Id,
-          name:        "City Break",
-          destination: "Wrocław",
-          date:        ISODate("2025-05-20"),
-          max_places:  25
-        }
-      ]
-  }}
-);
-
-
-// — 2d) Wstawiamy osoby do Person3
-
-var resAnna  = db.Person3.insertOne({ firstname: "Anna",  lastname: "Kowalska",   reservations: [] });
-var p1Id     = resAnna.insertedId;
-var resPiotr = db.Person3.insertOne({ firstname: "Piotr", lastname: "Nowak",      reservations: [] });
-var p2Id     = resPiotr.insertedId;
-var resEwa   = db.Person3.insertOne({ firstname: "Ewa",   lastname: "Wiśniewska", reservations: [] });
-var p3Id     = resEwa.insertedId;
-
-
-// — 2e) Rezerwacje
-
-var r1 = db.Reservation3.insertOne({ personId: p1Id, tripId: trip1Id, no_tickets: 2 }).insertedId;
-db.Person3.updateOne(
-  { _id: p1Id },
-  { $push: {
-      reservations: {
-        reservationId: r1,
-        tripId:        trip1Id,
-        name:          "Mazury Tour",
-        destination:   "Mazury",
-        date:          ISODate("2025-03-10"),
-        no_tickets:    2,
-        rating:        null,
-        companyId:     comp1Id,
-        companyName:   "TravelCo"
-      }
-  }}
-);
-
-var r2 = db.Reservation3.insertOne({ personId: p2Id, tripId: trip1Id, no_tickets: 1 }).insertedId;
-db.Person3.updateOne(
-  { _id: p2Id },
-  { $push: {
-      reservations: {
-        reservationId: r2,
-        tripId:        trip1Id,
-        name:          "Mazury Tour",
-        destination:   "Mazury",
-        date:          ISODate("2025-03-10"),
-        no_tickets:    1,
-        rating:        null,
-        companyId:     comp1Id,
-        companyName:   "TravelCo"
-      }
-  }}
-);
-
-
-// — 2f) Oceny na Trip3: updateOne z $push i $each —
-
-db.Trip3.updateOne(
-  { _id: trip1Id },
+db.Company1.aggregate([
   {
-    $push: {
-      ratings: {
-        $each: [
-          {
-            personId:  p1Id,
-            firstname: "Anna",
-            lastname:  "Kowalska",
-            rating:    5
-          },
-          {
-            personId:  p2Id,
-            firstname: "Piotr",
-            lastname:  "Nowak",
-            rating:    4
-          }
-        ]
-      }
-    },
-    $set: {
-      average_rating: NumberDecimal(4.5),
-      number_of_ratings: 2
+    $lookup: {
+      from: "Trip1",
+      localField: "_id",
+      foreignField: "companyId",
+      as: "trips"
     }
-  }
-);
+  },
+  {
+    $project: {com.intellij.database.console.JdbcConsoleProvider$MyIntroduceTarget@37510ce4
+      name: 1,
+      address: 1,
+      trips: {
+        $map: {
+          input: "$trips",
+          as: "t",
+          in: {
+            tripId: "$$t._id",
+            name: "$$t.name",
+            destination: "$$t.destination",
+            date: "$$t.date",
+            max_places: "$$t.max_places"
+          }
+        }
+      }
+    }
+  },
+  { $merge: { into: "Company3" } }
+]);
+
+
+// Wstawiamy wycieczki do Trip3
+
+db.Trip1.aggregate([
+  {
+    $lookup: {
+      from: "Rating1",
+      localField: "_id",
+      foreignField: "tripId",
+      as: "ratings"
+    }
+  },
+  {
+    $lookup: {
+      from: "Person1",
+      localField: "ratings.personId",
+      foreignField: "_id",
+      as: "persons"
+    }
+  },
+  {
+    $addFields: {
+      ratings: {
+        $map: {
+          input: "$ratings",
+          as: "r",
+          in: {
+            personId: "$$r.personId",
+            rating: "$$r.rating",
+            firstname: {
+              $arrayElemAt: [
+                "$persons.firstname",
+                { $indexOfArray: ["$persons._id", "$$r.personId"] }
+              ]
+            },
+            lastname: {
+              $arrayElemAt: [
+                "$persons.lastname",
+                { $indexOfArray: ["$persons._id", "$$r.personId"] }
+              ]
+            }
+          }
+        }
+      },
+      number_of_ratings: { $size: "$ratings" },
+      average_rating: { $cond: [
+        { $gt: [ { $size: "$ratings" }, 0 ] },
+        { $avg: "$ratings.rating" },
+        null
+      ]}
+    }
+  },
+  {
+    $project: {
+      name: 1,
+      destination: 1,
+      date: 1,
+      max_places: 1,
+      companyId: 1,
+      ratings: 1,
+      number_of_ratings: 1,
+      average_rating: 1
+    }
+  },
+  { $merge: { into: "Trip3" } }
+]);
+
+// Wstawiamy osoby
+
+db.Person1.aggregate([
+  {
+    $lookup: {
+      from: "Reservation1",
+      localField: "_id",
+      foreignField: "personId",
+      as: "reservations"
+    }
+  },
+  {
+    $lookup: {
+      from: "Trip1",
+      localField: "reservations.tripId",
+      foreignField: "_id",
+      as: "trips"
+    }
+  },
+  {
+    $lookup: {
+      from: "Company1",
+      localField: "trips.companyId",
+      foreignField: "_id",
+      as: "companies"
+    }
+  },
+  {
+    $lookup: {
+      from: "Rating1",
+      localField: "_id",
+      foreignField: "personId",
+      as: "ratings"
+    }
+  },
+  {
+    $addFields: {
+      reservations: {
+        $map: {
+          input: "$reservations",
+          as: "res",
+          in: {
+            reservationId: "$$res._id",
+            tripId: "$$res.tripId",
+            name: {
+              $arrayElemAt: [
+                "$trips.name",
+                { $indexOfArray: ["$trips._id", "$$res.tripId"] }
+              ]
+            },
+            destination: {
+              $arrayElemAt: [
+                "$trips.destination",
+                { $indexOfArray: ["$trips._id", "$$res.tripId"] }
+              ]
+            },
+            date: {
+              $arrayElemAt: [
+                "$trips.date",
+                { $indexOfArray: ["$trips._id", "$$res.tripId"] }
+              ]
+            },
+            no_tickets: "$$res.no_tickets",
+            companyId: {
+              $arrayElemAt: [
+                "$trips.companyId",
+                { $indexOfArray: ["$trips._id", "$$res.tripId"] }
+              ]
+            },
+            companyName: {
+              $arrayElemAt: [
+                "$companies.name",
+                { $indexOfArray: [
+                  "$companies._id",
+                  { $arrayElemAt: [
+                    "$trips.companyId",
+                    { $indexOfArray: ["$trips._id", "$$res.tripId"] }
+                  ]}
+                ]}
+              ]
+            },
+            rating: {
+              $ifNull: [
+                {
+                  $arrayElemAt: [
+                    "$ratings.rating",
+                    { $indexOfArray: ["$ratings.tripId", "$$res.tripId"] }
+                  ]
+                },
+                null
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      firstname: 1,
+      lastname: 1,
+      reservations: 1
+    }
+  },
+  { $merge: { into: "Person3" } }
+]);
+// Wstawiamy rezerwacje
+
+vdb.Reservation1.aggregate([
+  {
+    $project: {
+      personId: 1,
+      tripId: 1,
+      no_tickets: 1
+    }
+  },
+  { $merge: { into: "Reservation3" } }
+]);
 ```
 
-**Porównanie operacji dla modelu 1 i 3**
+**Porównanie operacji dla modelu 1, 2 i 3**
 
 ```js
-// 1.1. Pobranie wszystkich wycieczek dla firmy o _id = comp1Id (Model1 - znormalizowany)
+// 1. Pobranie wszystkich wycieczek dla firmy o _id = comp1Id 
 const comp1Id = db.Company1.findOne()._id;
+// Model 1 - znormalizowany
 db.Company1.aggregate([
   { $match: { _id: comp1Id } },
   {
@@ -1294,13 +1671,17 @@ db.Company1.aggregate([
     },
   },
 ]);
+// Model 2 - zagnieżdżony
+db.TripInfo.find(
+  { "company._id": comp1Id },
+  { name: 1, destination: 1, date: 1, max_places: 1, _id: 0 }
+)
+// Model 3 - częsciowo znormalizowany
+db.Company3.findOne({ _id: comp1Id }, { _id: 0, name: 1, trips: 1 });
 
-// 3.1. Pobranie wszystkich wycieczek dla firmy o _id = comp3Id (Model3 - zagnieżdżony)
-const comp3Id = db.Company3.findOne()._id;
-db.Company3.findOne({ _id: comp3Id }, { _id: 0, name: 1, trips: 1 });
-
-// 1.2. Pobranie informacji o rezerwacjach osoby (_id = person1Id) wraz z danymi o wycieczkach i ocenach (Model1)
+// 2. Pobranie informacji o rezerwacjach osoby (_id = person1Id) wraz z danymi o wycieczkach i ocenach
 const person1Id = db.Person1.findOne()._id;
+// Model 1
 db.Person1.aggregate([
   { $match: { _id: person1Id } },
   {
@@ -1356,27 +1737,91 @@ db.Person1.aggregate([
     },
   },
 ]);
+// Model 2
+db.PersonInfo.aggregate([
+  { $match: { _id: person1Id } },
+  { $unwind: "$reservations" },
+  {
+    $project: {
+      _id: 0,
+      firstname: 1,
+      lastname: 1,
+      reservation: "$reservations"
+    }
+  }
+])
+// Model 3
+db.Person3.aggregate([
+  { $match: { _id: person1Id } },
+  { $unwind: "$reservations" },
+  {
+    $project: {
+      _id: 0,
+      firstname: 1,
+      lastname: 1,
+      reservation: "$reservations"
+    }
+  }
+])
 
-// 3.2. Pobranie informacji o rezerwacjach osoby (_id = person3Id) wraz z danymi o wycieczkach (Model3)
-const person3Id = db.Person3.findOne()._id;
-db.Person3.findOne(
-  { _id: person3Id },
-  { _id: 0, firstname: 1, lastname: 1, reservations: 1 }
-);
 
-// 1.3. Dodanie nowej rezerwacji (Model1)
-const trip1Id = db.Trip1.findOne()._id;
+// 3. Dodanie nowej rezerwacji
+const person = db.Person1.findOne();
+const trip = db.Trip1.findOne();
+// Model 1
 const newRes = db.Reservation1.insertOne({
-  personId: person1Id,
-  tripId: trip1Id,
+  personId: person._id,
+  tripId: trip._id,
   no_tickets: 2,
 });
+// Model 2
+const person = db.Person1.findOne();
+const trip = db.Trip1.findOne();
+const company = db.Company1.findOne({ _id: trip.companyId });
+const ratingDoc = db.Rating1.findOne({ tripId: trip._id, personId: person._id });
 
-// 3.3. Dodanie nowej rezerwacji (Model3):
-// a) do kolekcji rezerwacji
+// a) Dodaj do TripInfo
+db.TripInfo.updateOne(
+  { _id: trip._id },
+  {
+    $push: {
+      reservations: {
+        personId: person._id,
+        firstname: person.firstname,
+        lastname: person.lastname,
+        no_tickets: 2,
+        rating: ratingDoc ? ratingDoc.rating : null
+      }
+    }
+  }
+);
+// b) Dodaj do PersonInfo
+db.PersonInfo.updateOne(
+  { _id: person._id },
+  {
+    $push: {
+      reservations: {
+        tripId: trip._id,
+        name: trip.name,
+        destination: trip.destination,
+        date: trip.date,
+        company: {
+          _id: company._id,
+          name: company.name,
+          address: company.address
+        },
+        no_tickets: 2,
+        rating: ratingDoc ? ratingDoc.rating : null
+      }
+    }
+  }
+);
+// Model 3
+// a) Dodaj do Reservations
+const personId = db.Person3.findOne()._id;
 const trip3Id = db.Trip3.findOne()._id;
 const res3 = db.Reservation3.insertOne({
-  personId: person1Id,
+  personId: personId,
   tripId: trip3Id,
   no_tickets: 2,
 });
@@ -1385,7 +1830,7 @@ const tripInfo = db.Trip3.findOne({ _id: trip3Id });
 const compInfo = db.Company3.findOne({ _id: tripInfo.companyId });
 
 db.Person3.updateOne(
-  { _id: person1Id },
+  { _id: personId },
   {
     $push: {
       reservations: {
@@ -1402,7 +1847,6 @@ db.Person3.updateOne(
     },
   }
 );
-
 // c) aktualizacja available_places w Trip3
 const allRes = db.Reservation3.find({ tripId: tripInfo._id }).toArray();
 let totalTickets = 0;
@@ -1415,13 +1859,28 @@ db.Trip3.updateOne(
   { $set: { available_places: tripInfo.max_places - totalTickets } }
 );
 
-// 1.4. Zmiana liczby biletów w rezerwacji (Model1)
+// 4. Zmiana liczby biletów w rezerwacji 
+// Model 1
 db.Reservation1.updateOne(
   { _id: newRes.insertedId },
   { $set: { no_tickets: 3 } }
 );
+// Model 2
+const person = db.Person1.findOne({ firstname: "Anna", lastname: "Kowalska" });
+const trip = db.Trip1.findOne({ name: "Mazury Tour" });
 
-// 3.4. Zmiana liczby biletów w rezerwacji (Model3)
+// a)
+db.PersonInfo.updateOne(
+  { _id: person._id, "reservations.tripId": trip._id },
+  { $set: { "reservations.$.no_tickets": 3 } }
+);
+
+// b)
+db.TripInfo.updateOne(
+  { _id: trip._id, "reservations.personId": person._id },
+  { $set: { "reservations.$.no_tickets": 3 } }
+);
+// Model 3
 db.Reservation3.updateOne(
   { _id: res3.insertedId },
   { $set: { no_tickets: 3 } }
@@ -1432,19 +1891,51 @@ db.Person3.updateOne(
   { $set: { "reservations.$.no_tickets": 3 } }
 );
 
-// 1.5. Obliczenie średniej oceny dla wycieczki (Model1)
+// 5. Obliczenie średniej oceny dla wycieczki 
+// Model 1
 db.Rating1.aggregate([
   { $match: { tripId: trip1Id } },
   { $group: { _id: "$tripId", avg_rating: { $avg: "$rating" } } },
 ]);
+// Model 2
+const tripId = db.TripInfo.findOne({ name: "Mazury Tour" })._id;
 
-// 3.5. Pobranie average_rating z Trip3 (Model3)
+db.TripInfo.aggregate([
+  { $match: { _id: tripId } },
+  { $unwind: "$reservations" },
+  { $match: { "reservations.rating": { $ne: null } } },
+  {
+    $group: {
+      _id: "$_id",
+      avg_rating: { $avg: "$reservations.rating" }
+    }
+  }
+])
+
+// Model 3
 db.Trip3.findOne({ _id: trip3Id }, { _id: 0, name: 1, average_rating: 1 });
 
-// 1.6. Wyszukiwanie wycieczek według kryteriów (Model1)
+// 6. Wyszukiwanie wycieczek według kryteriów
+
+// Model 1
 db.Trip1.find({ destination: "Mazury", date: { $gte: ISODate("2025-01-01") } });
 
-// 3.6. Wyszukiwanie (Model3)
+// Model 2
+
+db.TripInfo.find({
+  destination: "Mazury",
+  date: { $gte: ISODate("2025-01-01") },
+  "company.name": "TravelCo",
+  max_places: { $gte: 2 }
+})
+
+db.TripInfo.find({
+  destination: "Mazury",
+  date: { $gte: ISODate("2025-01-01") }
+})
+
+// Model 3
+
 db.Trip3.find({ destination: "Mazury", date: { $gte: ISODate("2025-01-01") } });
 // lub w Company3:
 db.Company3.find({
@@ -1452,18 +1943,37 @@ db.Company3.find({
   "trips.date": { $gte: ISODate("2025-01-01") },
 });
 
-// 1.7. Aktualizacja firmy (Model1)
+// 7. Aktualizacja firmy 
+
+// Model 1
 db.Company1.updateOne(
   { _id: comp1Id },
   { $set: { address: "ul. Nowa 15, Warszawa" } }
 );
-// 3.7. Aktualizacja firmy (Model3)
+
+// Model 2
+const companyId = db.Company1.findOne({ name: "TravelCo" })._id;
+//a)
+db.TripInfo.updateMany(
+  { "company._id": companyId },
+  { $set: { "company.address": "ul. Nowa 123, Warszawa" } }
+);
+//b)
+db.PersonInfo.updateMany(
+  { "reservations.company._id": companyId },
+  { $set: { "reservations.$[elem].company.address": "ul. Nowa 123, Warszawa" } },
+  { arrayFilters: [ { "elem.company._id": companyId } ] }
+);
+
+// Model 3
 db.Company3.updateOne(
   { _id: comp1Id },
   { $set: { address: "ul. Nowa 15, Warszawa" } }
 );
 
-// 1.8. Wyszukiwanie osób, które zarezerwowały konkretne tripId (Model1)
+// 8. Wyszukiwanie osób, które zarezerwowały wycieczkę
+
+// Model 1
 db.Person1.aggregate([
   {
     $lookup: {
@@ -1476,12 +1986,53 @@ db.Person1.aggregate([
   { $match: { "reservations.tripId": trip1Id } },
   { $project: { _id: 0, firstname: 1, lastname: 1 } },
 ]);
+// Model 2
+const trip = db.TripInfo.findOne({ name: "Mazury Tour" });
 
-// 3.8. Wyszukiwanie osób (Model3)
+db.PersonInfo.find(
+  { "reservations.tripId": trip._id },
+  { firstname: 1, lastname: 1, "reservations.$": 1 }
+)
+// Model 3
 db.Person3.find(
   { "reservations.tripId": trip3Id },
   { _id: 0, firstname: 1, lastname: 1 }
 );
+```
+**Ciekawe zapytania dla modelu 3**
+
+```sql
+
+// Wyświetl wszystkie wycieczki, które dana osoba oceniła na 5
+db.PersonInfo.aggregate([
+    { $match: { firstname: "Anna", lastname: "Kowalska" } },
+    { $unwind: "$reservations" },
+    { $match: { "reservations.rating": 5 } },
+    { $project: { "reservations.name": 1, "reservations.destination": 1, "reservations.company.name": 1, "reservations.rating": 1, _id: 0 } }
+  ])
+// Policz ile rezerwacji ma dana osoba
+db.PersonInfo.aggregate([
+    { $match: { firstname: "Anna", lastname: "Kowalska" } },
+    { $project: { liczba_rezerwacji: { $size: "$reservations" } } }
+  ])
+//Wyszukaj wycieczki, gdzie ktoś zarezerwował więcej niż 1 miejsce
+db.TripInfo.find(
+    { "reservations.no_tickets": { $gt: 1 } },
+    { name: 1, "reservations.$": 1 }
+  )
+//Wyszukaj wycieczki,które odbyły się w marcu 2025 roku i zostały zorganizowane przez firmę TravelCo
+db.TripInfo.find(
+    {
+      "company.name": "TravelCo",
+      date: {
+        $gte: ISODate("2025-03-01T00:00:00Z"),
+        $lt: ISODate("2025-04-01T00:00:00Z")
+      }
+    },
+    {
+      reservations: 0
+    }
+)
 ```
 
 ---
