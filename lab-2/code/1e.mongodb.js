@@ -1,165 +1,109 @@
 const newOrderId = 12345;
-//1
-db.orderdetails.find(
-    {
-     OrderID:newOrderId
-    },
-).limit(2)
- db.orderdetails.updateOne(
-    {
-        OrderID:newOrderId,
-        ProductID: 1,
-    },
-     {
-            $inc: {"Discount": 0.05}
-     }
- )
- db.orderdetails.updateOne(
-     {
-         OrderID:newOrderId,
-            ProductID: 31,
-     },
-     {
-        $inc: {"Discount": 0.05}
-     }
-  )
-db.orderdetails.find(
-    {
-     OrderID:newOrderId
-    },
-).limit(2)
-//2
-db.OrdersInfo.find(
-    {
-     OrderID:newOrderId
-    },
-).limit(2)
-   db.OrdersInfo.updateOne(
-       {
-           OrderID:newOrderId
-       },
-       [
-          {
-             $set: {
-                Orderdetails:{
-                     $map: {
-                         input:"$Orderdetails",
-                         as:"detail",
-                         in:{
-                            $mergeObjects:[
-                                "$$detail",
-                               {
-                                 Discount: { $add: ["$$detail.Discount", 0.05] },
-                                 Value: {
-                                   $multiply: [
-                                     "$$detail.UnitPrice",
-                                     "$$detail.Quantity",
-                                     { $subtract: [1, { $add: ["$$detail.Discount", 0.05] }] }
-                                   ]
-                                 }
-                               }
-                            ]
-                         }
-                     }
-                }
-             }
-          },
-          {
-               $set: {
-                  Ordertotal:{
-                      $sum:"$Orderdetails.Value"
-                  }
-               }
 
-          }
-       ]
-      )
-db.OrdersInfo.find(
-    {
-     OrderID:newOrderId
-    },
-).limit(2)
-//3
-db.CustomerInfo.find(
-    { CustomerID: "ALFKI" },
-);
-db.CustomerInfo.updateOne(
+ db.orders.insertOne({
+  OrderID: newOrderId,
+  CustomerID: "ALFKI",
+  EmployeeID: 5,
+  OrderDate: ISODate("2025-04-16T00:00:00Z"),
+  RequiredDate: ISODate("2025-05-16T00:00:00Z"),
+  ShipVia: 3,
+  Freight: 15.00,
+  ShipName: "Alfreds Futterkiste",
+  ShipAddress: "Obere Str. 57",
+  ShipCity: "Berlin",
+  ShipCountry: "Germany"
+});
+
+db.orderdetails.insertMany([
   {
-    CustomerID: "ALFKI"
+    OrderID: newOrderId,
+    ProductID: 1,
+    UnitPrice: 18.00,
+    Quantity: 10,
+    Discount: 0
   },
-  [
+  {
+    OrderID: newOrderId,
+    ProductID: 31,
+    UnitPrice: 62.50,
+    Quantity: 5,
+    Discount: 0.05
+  }
+]);
+
+db.OrdersInfo.insertOne({
+  OrderID: newOrderId,
+  Customer: {
+    CustomerID: "ALFKI",
+    CompanyName: "Alfreds Futterkiste",
+    City: "Berlin",
+    Country: "Germany"
+  },
+  Employee: {
+    EmployeeID: 5,
+    FirstName: "Steven",
+    LastName: "Buchanan",
+    Title: "Sales Manager"
+  },
+  Dates: {
+    OrderDate: ISODate("2025-04-16T00:00:00Z"),
+    RequiredDate: ISODate("2025-05-16T00:00:00Z")
+  },
+  Orderdetails: [
     {
-      $set: {
-        Orders: {
-          $map: {
-            input: "$Orders",
-            as: "order",
-            in: {
-              $cond: {
-                if: { $eq: ["$$order.OrderID", newOrderId] },
-                then: {
-                  $mergeObjects: [
-                    "$$order",
-                    {
-                      Orderdetails: {
-                        $map: {
-                          input: "$$order.Orderdetails",
-                          as: "detail",
-                          in: {
-                            $mergeObjects: [
-                              "$$detail",
-                              {
-                                Discount: { $add: ["$$detail.Discount", 0.05] },
-                                Value: {
-                                  $multiply: [
-                                    "$$detail.UnitPrice",
-                                    "$$detail.Quantity",
-                                    { $subtract: [1, { $add: ["$$detail.Discount", 0.05] }] }
-                                  ]
-                                }
-                              }
-                            ]
-                          }
-                        }
-                      }
-                    }
-                  ]
-                },
-                else: "$$order"
-              }
-            }
-          }
-        }
+      UnitPrice: 18.00,
+      Quantity: 10,
+      Discount: 0,
+      Value: 180.00,
+      product: {
+        ProductID: 1,
+        ProductName: "Chai",
+        QuantityPerUnit: "10 boxes x 20 bags",
+        CategoryID: 1,
+        CategoryName: "Beverages"
       }
     },
     {
-      $set: {
-        Orders: {
-          $map: {
-            input: "$Orders",
-            as: "order",
-            in: {
-              $cond: {
-                if: { $eq: ["$$order.OrderID", newOrderId] },
-                then: {
-                  $mergeObjects: [
-                    "$$order",
-                    {
-                      OrderTotal: { $sum: "$$order.Orderdetails.Value" }
-                    }
-                  ]
-                },
-                else: "$$order"
-              }
-            }
-          }
-        }
+      UnitPrice: 62.50,
+      Quantity: 5,
+      Discount: 0.05,
+      Value: 296.875,
+      product: {
+        ProductID: 31,
+        ProductName: "Ikura",
+        QuantityPerUnit: "12 - 200 g jars",
+        CategoryID: 8,
+        CategoryName: "Seafood"
       }
     }
-  ]
-)
-db.CustomerInfo.find(
-    {
-     CustomerID:"ALFKI"
-    },
-).limit(2)
+  ],
+  Freight: 15.00,
+  OrderTotal: 476.875,
+  Shipment: {
+    Shipper: { ShipperID: 3, CompanyName: "Federal Shipping" },
+    ShipName: "Alfreds Futterkiste",
+    ShipAddress: "Obere Str. 57",
+    ShipCity: "Berlin",
+    ShipCountry: "Germany"
+  }
+});
+
+ db.CustomerInfo.updateOne(
+  { CustomerID: "ALFKI" },
+  {
+    $push: {
+      Orders: {
+        OrderID: newOrderId,
+        Dates: { OrderDate: ISODate("2025-04-16T00:00:00Z"), RequiredDate: ISODate("2025-05-16T00:00:00Z") },
+        Employee: { EmployeeID: 5, FirstName: "Steven", LastName: "Buchanan", Title: "Sales Manager" },
+        Freight: 15.00,
+        OrderTotal: 476.875,
+        Shipment: { Shipper: { ShipperID: 3, CompanyName: "Federal Shipping" }, ShipName: "Alfreds Futterkiste", ShipAddress: "Obere Str. 57", ShipCity: "Berlin", ShipCountry: "Germany" },
+        Orderdetails: [
+          { UnitPrice: 18.00, Quantity: 10, Discount: 0, Value: 180.00, product: { ProductID: 1, ProductName: "Chai", QuantityPerUnit: "10 boxes x 20 bags", CategoryID: 1, CategoryName: "Beverages" } },
+          { UnitPrice: 62.50, Quantity: 5, Discount: 0.05, Value: 296.875, product: { ProductID: 31, ProductName: "Ikura", QuantityPerUnit: "12 - 200 g jars", CategoryID: 8, CategoryName: "Seafood" } }
+        ]
+      }
+    }
+  }
+);

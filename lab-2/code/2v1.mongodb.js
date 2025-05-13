@@ -257,6 +257,10 @@ db.Reservation1.updateOne({ _id: reservationId }, { $set: { no_tickets: 3 } });
 // 5. Aktualizacja oceny
 db.Rating1.updateOne({ personId, tripId }, { $set: { rating: 4 } });
 
+// MODEL 2 - 
+
+
+
 // MODEL 3 Z ZAGNIEŻDŻONYMI TABLICAMI
 
 // 1. Company3 – firmy z zagnieżdżonymi wycieczkami
