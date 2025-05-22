@@ -200,7 +200,7 @@ W raporcie należy zamieścić kod poleceń oraz uzyskany rezultat, np wynik po
 >
 > przykłady, kod, zrzuty ekranów, komentarz ...
 
-a)
+### a)
 
 ```js
 db.createCollection("OrdersInfo", {
@@ -526,6 +526,8 @@ db.orders.aggregate([
 
 ![alt text](./readme_ss/1a.png)
 b)
+![alt text](./images/a.png)
+### b)
 
 ```js
 db.createCollection("CustomerInfo", {
@@ -743,8 +745,187 @@ db.customers.aggregate([
 ]);
 ```
 
-![alt text](./readme_ss/1b.png)
-d)
+![alt text](./images/1b.png)
+
+### c)
+```js
+ //1
+    db.customers.aggregate([
+        {
+            $match: {},
+            },
+        {
+            $lookup: {
+                from: "orders",
+                localField: "CustomerID",
+                foreignField: "CustomerID",
+                as: "orders",
+                },
+            },
+        {
+            $unwind: "$orders",
+            },
+        {
+            $match: {
+                $expr: {
+                    $eq: [{ $year: "$orders.OrderDate" }, 1997],
+                    },
+                },
+            },
+        {
+            $lookup: {
+                from: "orderdetails",
+                localField: "orders.OrderID",
+                foreignField: "OrderID",
+                as: "orderdetails",
+                },
+            },
+        {
+            $unwind: "$orderdetails",
+            },
+        {
+            $lookup: {
+                from: "products",
+                localField: "orderdetails.ProductID",
+                foreignField: "ProductID",
+                as: "products",
+                },
+            },
+        {
+            $unwind: "$products",
+            },
+        {
+            $lookup: {
+                from: "categories",
+                localField: "products.CategoryID",
+                foreignField: "CategoryID",
+                as: "categories",
+                },
+            },
+        {
+            $unwind: "$categories",
+            },
+        {
+            $match: {
+                "categories.CategoryName": "Confections",
+                },
+            },
+        {
+            $group: {
+                _id: "$_id",
+                CustomerID: { $first: "$CustomerID" },
+                CompanyName: { $first: "$CompanyName" },
+                ConfectionsSale97: {
+                    $sum: {
+                        $multiply: [
+                            { $subtract: [1, "$orderdetails.Discount"] },
+                            "$orderdetails.UnitPrice",
+                            "$orderdetails.Quantity",
+                            ],
+                        },
+                    },
+                },
+            },
+        {
+            $sort: {
+                ConfectionsSale97: -1,
+                },
+            },
+        ]);
+
+    //2
+    db.OrdersInfo.aggregate([
+        {
+            $match: {
+                $expr: { $eq: [{ $year: "$Dates.OrderDate" }, 1997] }
+                }
+            },
+        {
+            $unwind: "$Orderdetails"
+            },
+        {
+            $match: {
+                "Orderdetails.product.CategoryName": "Confections"
+                }
+            },
+        {
+            $group: {
+                _id: "$Customer.CustomerID",
+                CustomerID: { $first: "$Customer.CustomerID" },
+                CompanyName: { $first: "$Customer.CompanyName" },
+                ConfectionsSale97: {
+                    $sum: {
+                        $multiply: [
+                            { $subtract: [1, "$Orderdetails.Discount"] },
+                            "$Orderdetails.UnitPrice",
+                            "$Orderdetails.Quantity"
+                            ]
+                        }
+                    }
+                }
+            },
+        {
+
+            $project: {
+                _id: 0,
+                CustomerID: "$_id",
+                CompanyName: 1,
+                ConfectionsSale97: 1
+                }
+            },
+        {
+            $sort: {
+                ConfectionsSale97: -1
+                }
+            }
+        ]);
+    //3
+    db.CustomerInfo.aggregate([
+        {
+            $unwind: "$Orders",
+            },
+        {
+            $match: {
+                $expr: { $eq: [{ $year: { $toDate: "$Orders.Dates.OrderDate"} }, 1997] }
+                }
+            },
+        {
+            $unwind: "$Orders.Orderdetails",
+            },
+        {
+            $match: {
+                "Orders.Orderdetails.product.CategoryName": "Confections",
+                },
+            },
+        {
+            $group: {
+                _id: "$_id",
+                CustomerID: { $first: "$CustomerID" },
+                CompanyName: { $first: "$CompanyName" },
+                ConfectionsSale97: {
+                    $sum: {
+                        $multiply: [
+                            { $subtract: [1, "$Orders.Orderdetails.Discount"] },
+                            "$Orders.Orderdetails.UnitPrice",
+                            "$Orders.Orderdetails.Quantity",
+                            ],
+                        },
+                    },
+                },
+            },
+        {
+            $sort: {
+                ConfectionsSale97: -1,
+                },
+            },
+        ]);
+```
+
+### zdjecie dla c) wersja 1
+![alt text](./images/1c_1.png)
+### zdjecie dla c) wersja 2
+![alt text](./images/1c_2.png)
+### d)
 
 ```js
 // zad 1d original
@@ -810,7 +991,7 @@ db.customers.aggregate([
 ]);
 ```
 
-![alt text](./readme_ss/1d_og.png)
+![alt text](./images/1d_og.png)
 
 ```js
 //zad 1d orderinfo
@@ -854,7 +1035,7 @@ db.OrdersInfo.aggregate([
 ]);
 ```
 
-![alt text](./readme_ss/1d_of.png)
+![alt text](./images/1d_of.png)
 
 ```js
 //zad1d customerinfo
@@ -898,8 +1079,8 @@ db.CustomerInfo.aggregate([
 ]);
 ```
 
-![alt text](./readme_ss/1d_cf.png)
-e)
+![alt text](./images/1d_cf.png)
+### e)
 
 ```js
 const newOrderId = 12345;
@@ -991,7 +1172,6 @@ db.OrdersInfo.insertOne({
     ShipCountry: "Germany",
   },
 });
-
 db.CustomerInfo.updateOne(
   { CustomerID: "ALFKI" },
   {
@@ -1051,7 +1231,7 @@ db.CustomerInfo.updateOne(
 );
 ```
 
-f)
+### f)
 
 ```js
 const newOrderId = 12345;

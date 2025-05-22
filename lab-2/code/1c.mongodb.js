@@ -103,107 +103,88 @@ db.customers.aggregate([
 ]);
 
 //2
-db.customers.aggregate([
+db.OrdersInfo.aggregate([
   {
-    $match: {},
-  },
-  {
-    $lookup: {
-      from: "OrdersInfo",
-      localField: "CustomerID",
-      foreignField: "Customer.CustomerID",
-      as: "ordersinfo",
-    },
-  },
-  {
-    $unwind: "$ordersinfo",
-  },
-  {
-    $match: {
-      $expr: { $eq: [{ $year: "$ordersinfo.Dates.OrderDate" }, 1997] },
-    },
-  },
-  {
-    $unwind: "$ordersinfo.Orderdetails",
-  },
-  {
-    $match: {
-      "ordersinfo.Orderdetails.product.CategoryName": "Confections",
-    },
-  },
-  {
-    $group: {
-      _id: "$_id",
-      CustomerID: { $first: "$CustomerID" },
-      CompanyName: { $first: "$CompanyName" },
-      ConfectionsSale97: {
-        $sum: {
-          $multiply: [
-            { $subtract: [1, "$ordersinfo.Orderdetails.Discount"] },
-            "$ordersinfo.Orderdetails.UnitPrice",
-            "$ordersinfo.Orderdetails.Quantity",
-          ],
-        },
+      $match: {
+          $expr: { $eq: [{ $year: "$Dates.OrderDate" }, 1997] }
+          }
       },
-    },
-  },
   {
-    $sort: {
-      ConfectionsSale97: -1,
-    },
-  },
-]);
+      $unwind: "$Orderdetails"
+      },
+  {
+      $match: {
+          "Orderdetails.product.CategoryName": "Confections"
+          }
+      },
+  {
+      $group: {
+          _id: "$Customer.CustomerID",
+          CustomerID: { $first: "$Customer.CustomerID" },
+          CompanyName: { $first: "$Customer.CompanyName" },
+          ConfectionsSale97: {
+              $sum: {
+                  $multiply: [
+                      { $subtract: [1, "$Orderdetails.Discount"] },
+                      "$Orderdetails.UnitPrice",
+                      "$Orderdetails.Quantity"
+                      ]
+                  }
+              }
+          }
+      },
+  {
+
+      $project: {
+          _id: 0,
+          CustomerID: "$_id",
+          CompanyName: 1,
+          ConfectionsSale97: 1
+          }
+      },
+  {
+      $sort: {
+          ConfectionsSale97: -1
+          }
+      }
+  ]);
 //3
-db.customers.aggregate([
+db.CustomerInfo.aggregate([
   {
-    $match: {},
-  },
-  {
-    $lookup: {
-      from: "CustomerInfo",
-      localField: "CustomerID",
-      foreignField: "CustomerID",
-      as: "customerinfo",
-    },
-  },
-  {
-    $unwind: "$customerinfo",
-  },
-  {
-    $unwind: "$customerinfo.Orders",
-  },
-  {
-    $match: {
-      $expr: { $eq: [{ $year: "$customerinfo.Orders.Dates.OrderDate" }, 1997] },
-    },
-  },
-  {
-    $unwind: "$customerinfo.Orders.Orderdetails",
-  },
-  {
-    $match: {
-      "customerinfo.Orders.Orderdetails.product.CategoryName": "Confections",
-    },
-  },
-  {
-    $group: {
-      _id: "$_id",
-      CustomerID: { $first: "$CustomerID" },
-      CompanyName: { $first: "$CompanyName" },
-      ConfectionsSale97: {
-        $sum: {
-          $multiply: [
-            { $subtract: [1, "$customerinfo.Orders.Orderdetails.Discount"] },
-            "$customerinfo.Orders.Orderdetails.UnitPrice",
-            "$customerinfo.Orders.Orderdetails.Quantity",
-          ],
-        },
+      $unwind: "$Orders",
       },
-    },
-  },
   {
-    $sort: {
-      ConfectionsSale97: -1,
-    },
-  },
-]);
+      $match: {
+          $expr: { $eq: [{ $year: { $toDate: "$Orders.Dates.OrderDate"} }, 1997] }
+          }
+      },
+  {
+      $unwind: "$Orders.Orderdetails",
+      },
+  {
+      $match: {
+          "Orders.Orderdetails.product.CategoryName": "Confections",
+          },
+      },
+  {
+      $group: {
+          _id: "$_id",
+          CustomerID: { $first: "$CustomerID" },
+          CompanyName: { $first: "$CompanyName" },
+          ConfectionsSale97: {
+              $sum: {
+                  $multiply: [
+                      { $subtract: [1, "$Orders.Orderdetails.Discount"] },
+                      "$Orders.Orderdetails.UnitPrice",
+                      "$Orders.Orderdetails.Quantity",
+                      ],
+                  },
+              },
+          },
+      },
+  {
+      $sort: {
+          ConfectionsSale97: -1,
+          },
+      },
+  ]);
