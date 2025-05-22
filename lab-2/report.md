@@ -215,7 +215,7 @@ db.createCollection("OrdersInfo", {
         "Orderdetails",
         "Freight",
         "OrderTotal",
-        "Shipment"
+        "Shipment",
       ],
       properties: {
         OrderID: { bsonType: "int", description: "int required" },
@@ -226,8 +226,8 @@ db.createCollection("OrdersInfo", {
             CustomerID: { bsonType: "string", description: "string required" },
             CompanyName: { bsonType: "string", description: "string required" },
             City: { bsonType: "string", description: "string required" },
-            Country: { bsonType: "string", description: "string required" }
-          }
+            Country: { bsonType: "string", description: "string required" },
+          },
         },
         Employee: {
           bsonType: "object",
@@ -236,28 +236,22 @@ db.createCollection("OrdersInfo", {
             EmployeeID: { bsonType: "int", description: "int required" },
             FirstName: { bsonType: "string", description: "string required" },
             LastName: { bsonType: "string", description: "string required" },
-            Title: { bsonType: "string", description: "string required" }
-          }
+            Title: { bsonType: "string", description: "string required" },
+          },
         },
         Dates: {
           bsonType: "object",
           required: ["OrderDate", "RequiredDate"],
           properties: {
             OrderDate: { bsonType: "date", description: "date required" },
-            RequiredDate: { bsonType: "date", description: "date required" }
-          }
+            RequiredDate: { bsonType: "date", description: "date required" },
+          },
         },
         Orderdetails: {
           bsonType: "array",
           items: {
             bsonType: "object",
-            required: [
-              "UnitPrice",
-              "Quantity",
-              "Discount",
-              "Value",
-              "product"
-            ],
+            required: ["UnitPrice", "Quantity", "Discount", "Value", "product"],
             properties: {
               UnitPrice: { bsonType: "double", description: "double required" },
               Quantity: { bsonType: "int", description: "int required" },
@@ -270,18 +264,27 @@ db.createCollection("OrdersInfo", {
                   "ProductName",
                   "QuantityPerUnit",
                   "CategoryID",
-                  "CategoryName"
+                  "CategoryName",
                 ],
                 properties: {
                   ProductID: { bsonType: "int", description: "int required" },
-                  ProductName: { bsonType: "string", description: "string required" },
-                  QuantityPerUnit: { bsonType: "string", description: "string required" },
+                  ProductName: {
+                    bsonType: "string",
+                    description: "string required",
+                  },
+                  QuantityPerUnit: {
+                    bsonType: "string",
+                    description: "string required",
+                  },
                   CategoryID: { bsonType: "int", description: "int required" },
-                  CategoryName: { bsonType: "string", description: "string required" }
-                }
-              }
-            }
-          }
+                  CategoryName: {
+                    bsonType: "string",
+                    description: "string required",
+                  },
+                },
+              },
+            },
+          },
         },
         Freight: { bsonType: "double", description: "double required" },
         OrderTotal: { bsonType: "double", description: "double required" },
@@ -292,7 +295,7 @@ db.createCollection("OrdersInfo", {
             "ShipName",
             "ShipAddress",
             "ShipCity",
-            "ShipCountry"
+            "ShipCountry",
           ],
           properties: {
             Shipper: {
@@ -300,74 +303,78 @@ db.createCollection("OrdersInfo", {
               required: ["ShipperID", "CompanyName"],
               properties: {
                 ShipperID: { bsonType: "int", description: "int required" },
-                CompanyName: { bsonType: "string", description: "string required" }
-              }
+                CompanyName: {
+                  bsonType: "string",
+                  description: "string required",
+                },
+              },
             },
             ShipName: { bsonType: "string", description: "string required" },
             ShipAddress: { bsonType: "string", description: "string required" },
             ShipCity: { bsonType: "string", description: "string required" },
-            ShipCountry: { bsonType: "string", description: "string required" }
-          }
-        }
-      }
-    }
-  }
+            ShipCountry: { bsonType: "string", description: "string required" },
+          },
+        },
+      },
+    },
+  },
 });
 //use north0;
 db.orderdetails.aggregate([
   {
-     $match: {}
+    $match: {},
   },
   {
     $lookup: {
       from: "products",
       localField: "ProductID",
       foreignField: "ProductID",
-      as: "products"
-    }
+      as: "products",
+    },
   },
   {
-    $unwind: "$products"
+    $unwind: "$products",
   },
-   {
+  {
     $lookup: {
       from: "categories",
       localField: "products.CategoryID",
       foreignField: "CategoryID",
-      as: "categories"
-    }
-   },
-    {
-         $unwind: "$categories"
+      as: "categories",
     },
+  },
   {
-      $addFields: {
-          Value: { $multiply: ["$UnitPrice", "$Quantity", { $subtract: [1, "$Discount"] }] },
-          product: {
-              ProductID:"$products.ProductID",
-              ProductName:"$products.ProductName",
-              QuantityPerUnit: "$products.QuantityPerUnit",
-              CategoryID: "$products.CategoryID",
-              CategoryName: "$categories.CategoryName",
-          }
-      }
-   },
-   {
-    $project:{
-         "_id":0,
-        "products":0,
-        "categories":0,
-    }
-   },
-   {
-    $out:"orderdetails_tmp"
-   }
-
-])
+    $unwind: "$categories",
+  },
+  {
+    $addFields: {
+      Value: {
+        $multiply: ["$UnitPrice", "$Quantity", { $subtract: [1, "$Discount"] }],
+      },
+      product: {
+        ProductID: "$products.ProductID",
+        ProductName: "$products.ProductName",
+        QuantityPerUnit: "$products.QuantityPerUnit",
+        CategoryID: "$products.CategoryID",
+        CategoryName: "$categories.CategoryName",
+      },
+    },
+  },
+  {
+    $project: {
+      _id: 0,
+      products: 0,
+      categories: 0,
+    },
+  },
+  {
+    $out: "orderdetails_tmp",
+  },
+]);
 
 db.orders.aggregate([
   {
-    $match: {}
+    $match: {},
   },
   //customers
   {
@@ -375,25 +382,25 @@ db.orders.aggregate([
       from: "customers",
       localField: "CustomerID",
       foreignField: "CustomerID",
-      as: "Customer"
-    }
+      as: "Customer",
+    },
   },
   {
-    $unwind: "$Customer"
+    $unwind: "$Customer",
   },
   {
-      $project : {
-          "Customer._id": 0,
-          "Customer.ContactName": 0,
-          "Customer.ContactTitle": 0,
-          // "Customer.City": 0,
-          // "Customer.Country": 0,
-          "Customer.Address": 0,
-          "Customer.PostalCode": 0,
-          "Customer.Region": 0,
-          "Customer.Phone": 0,
-          "Customer.Fax": 0
-         }
+    $project: {
+      "Customer._id": 0,
+      "Customer.ContactName": 0,
+      "Customer.ContactTitle": 0,
+      // "Customer.City": 0,
+      // "Customer.Country": 0,
+      "Customer.Address": 0,
+      "Customer.PostalCode": 0,
+      "Customer.Region": 0,
+      "Customer.Phone": 0,
+      "Customer.Fax": 0,
+    },
   },
   //employees
   {
@@ -401,124 +408,124 @@ db.orders.aggregate([
       from: "employees",
       localField: "EmployeeID",
       foreignField: "EmployeeID",
-      as: "Employee"
-    }
-  },
-   {
-      $unwind: "$Employee"
+      as: "Employee",
     },
+  },
   {
-      $project : {
-          "Employee._id": 0,
-          //"Employee.Title": 0,
-          "Employee.TitleOfCourtesy": 0,
-          "Employee.BirthDate": 0,
-          "Employee.HireDate": 0,
-          "Employee.Address": 0,
-          "Employee.PostalCode": 0,
-          "Employee.City": 0,
-          "Employee.Region": 0,
-          "Employee.Country": 0,
-          "Employee.HomePhone": 0,
-          "Employee.Extension": 0,
-          "Employee.Photo": 0,
-          "Employee.Notes": 0,
-          "Employee.ReportsTo": 0,
-          "Employee.PhotoPath": 0
-      }
+    $unwind: "$Employee",
+  },
+  {
+    $project: {
+      "Employee._id": 0,
+      //"Employee.Title": 0,
+      "Employee.TitleOfCourtesy": 0,
+      "Employee.BirthDate": 0,
+      "Employee.HireDate": 0,
+      "Employee.Address": 0,
+      "Employee.PostalCode": 0,
+      "Employee.City": 0,
+      "Employee.Region": 0,
+      "Employee.Country": 0,
+      "Employee.HomePhone": 0,
+      "Employee.Extension": 0,
+      "Employee.Photo": 0,
+      "Employee.Notes": 0,
+      "Employee.ReportsTo": 0,
+      "Employee.PhotoPath": 0,
+    },
   },
   //Dates
   {
-      $addFields: {
-          Dates: {
-              OrderDate: "$OrderDate",
-              RequiredDate: "$RequiredDate",
-  
-          }
-      }
+    $addFields: {
+      Dates: {
+        OrderDate: "$OrderDate",
+        RequiredDate: "$RequiredDate",
+      },
+    },
   },
   //Orderdetails
   {
-    $lookup : {
-        from: "orderdetails_tmp",
-        localField: "OrderID",
-        foreignField: "OrderID",
-        as: "Orderdetails"
-    }
-  },
-  {
-    $project : {
-        "Orderdetails.OrderID": 0,
-        "Orderdetails._id": 0
-    }
-  },
-   //Shippers
-   {
-      $lookup : {
-          from: "shippers",
-          localField: "ShipVia",
-          foreignField: "ShipperID",
-          as: "shippers"
-      }
+    $lookup: {
+      from: "orderdetails_tmp",
+      localField: "OrderID",
+      foreignField: "OrderID",
+      as: "Orderdetails",
     },
-  {
-    $unwind:"$shippers"
   },
-  
-   {
-      $addFields: {
-      "Orderdetails": {
-            $map: {
-              input: "$Orderdetails",
-              as: "od",
-              in: {
-                UnitPrice: { $toDouble: "$$od.UnitPrice" },
-                Quantity: "$$od.Quantity",
-                Discount: { $toDouble:"$$od.Discount" },
-                Value: { $toDouble: "$$od.Value" },
-                product: "$$od.product"
-              }
-            }
+  {
+    $project: {
+      "Orderdetails.OrderID": 0,
+      "Orderdetails._id": 0,
+    },
+  },
+  //Shippers
+  {
+    $lookup: {
+      from: "shippers",
+      localField: "ShipVia",
+      foreignField: "ShipperID",
+      as: "shippers",
+    },
+  },
+  {
+    $unwind: "$shippers",
+  },
+
+  {
+    $addFields: {
+      Orderdetails: {
+        $map: {
+          input: "$Orderdetails",
+          as: "od",
+          in: {
+            UnitPrice: { $toDouble: "$$od.UnitPrice" },
+            Quantity: "$$od.Quantity",
+            Discount: { $toDouble: "$$od.Discount" },
+            Value: { $toDouble: "$$od.Value" },
+            product: "$$od.product",
           },
-       Freight: { $toDouble: "$Freight" },
-       OrderTotal: { $toDouble: { $sum: "$orderdetails.Value" } },
-        Shipment:{
-            Shipper:{
-               ShipperID:"$shippers.ShipperID",
-               CompanyName:"$shippers.CompanyName",
-            },
-            ShipName:"$ShipName" ,
-            ShipAddress:"$ShipAddress" ,
-            ShipCity: "$ShipCity" ,
-            ShipCountry:"$ShipCountry"
-            }
-        }
-  
-   },
+        },
+      },
+      Freight: { $toDouble: "$Freight" },
+      OrderTotal: { $toDouble: { $sum: "$orderdetails.Value" } },
+      Shipment: {
+        Shipper: {
+          ShipperID: "$shippers.ShipperID",
+          CompanyName: "$shippers.CompanyName",
+        },
+        ShipName: "$ShipName",
+        ShipAddress: "$ShipAddress",
+        ShipCity: "$ShipCity",
+        ShipCountry: "$ShipCountry",
+      },
+    },
+  },
   {
     $project: {
       _id: 0,
       shippers: 0,
-      "CustomerID":0,
-      "EmployeeID":0,
-      "OrderDate":0,
-      "RequiredDate":0,
-      "ShipAddress":0,
-      "ShipCity":0,
-      "ShipCountry":0,
-      "ShipName":0,
-      "ShipPostalCode":0,
-      "ShipRegion":0,
-      "ShipVia":0,
-      "ShippedDate":0
-    }
+      CustomerID: 0,
+      EmployeeID: 0,
+      OrderDate: 0,
+      RequiredDate: 0,
+      ShipAddress: 0,
+      ShipCity: 0,
+      ShipCountry: 0,
+      ShipName: 0,
+      ShipPostalCode: 0,
+      ShipRegion: 0,
+      ShipVia: 0,
+      ShippedDate: 0,
+    },
   },
   {
-    $out:"OrdersInfo"
-  }
-  ]);
-
+    $out: "OrdersInfo",
+  },
+]);
 ```
+
+![alt text](./readme_ss/1a.png)
+b)
 ![alt text](./images/a.png)
 ### b)
 
@@ -1223,117 +1230,171 @@ db.CustomerInfo.updateOne(
   }
 );
 ```
+
 ### f)
+
 ```js
 const newOrderId = 12345;
-
- db.orders.insertOne({
-  OrderID: newOrderId,
-  CustomerID: "ALFKI",
-  EmployeeID: 5,
-  OrderDate: ISODate("2025-04-16T00:00:00Z"),
-  RequiredDate: ISODate("2025-05-16T00:00:00Z"),
-  ShipVia: 3,
-  Freight: 15.00,
-  ShipName: "Alfreds Futterkiste",
-  ShipAddress: "Obere Str. 57",
-  ShipCity: "Berlin",
-  ShipCountry: "Germany"
-});
-
-db.orderdetails.insertMany([
+//1
+db.orderdetails
+  .find({
+    OrderID: newOrderId,
+  })
+  .limit(2);
+db.orderdetails.updateOne(
   {
     OrderID: newOrderId,
     ProductID: 1,
-    UnitPrice: 18.00,
-    Quantity: 10,
-    Discount: 0
   },
+  {
+    $inc: { Discount: 0.05 },
+  }
+);
+db.orderdetails.updateOne(
   {
     OrderID: newOrderId,
     ProductID: 31,
-    UnitPrice: 62.50,
-    Quantity: 5,
-    Discount: 0.05
-  }
-]);
-
-db.OrdersInfo.insertOne({
-  OrderID: newOrderId,
-  Customer: {
-    CustomerID: "ALFKI",
-    CompanyName: "Alfreds Futterkiste",
-    City: "Berlin",
-    Country: "Germany"
   },
-  Employee: {
-    EmployeeID: 5,
-    FirstName: "Steven",
-    LastName: "Buchanan",
-    Title: "Sales Manager"
-  },
-  Dates: {
-    OrderDate: ISODate("2025-04-16T00:00:00Z"),
-    RequiredDate: ISODate("2025-05-16T00:00:00Z")
-  },
-  Orderdetails: [
-    {
-      UnitPrice: 18.00,
-      Quantity: 10,
-      Discount: 0,
-      Value: 180.00,
-      product: {
-        ProductID: 1,
-        ProductName: "Chai",
-        QuantityPerUnit: "10 boxes x 20 bags",
-        CategoryID: 1,
-        CategoryName: "Beverages"
-      }
-    },
-    {
-      UnitPrice: 62.50,
-      Quantity: 5,
-      Discount: 0.05,
-      Value: 296.875,
-      product: {
-        ProductID: 31,
-        ProductName: "Ikura",
-        QuantityPerUnit: "12 - 200 g jars",
-        CategoryID: 8,
-        CategoryName: "Seafood"
-      }
-    }
-  ],
-  Freight: 15.00,
-  OrderTotal: 476.875,
-  Shipment: {
-    Shipper: { ShipperID: 3, CompanyName: "Federal Shipping" },
-    ShipName: "Alfreds Futterkiste",
-    ShipAddress: "Obere Str. 57",
-    ShipCity: "Berlin",
-    ShipCountry: "Germany"
-  }
-});
-
- db.CustomerInfo.updateOne(
-  { CustomerID: "ALFKI" },
   {
-    $push: {
-      Orders: {
-        OrderID: newOrderId,
-        Dates: { OrderDate: ISODate("2025-04-16T00:00:00Z"), RequiredDate: ISODate("2025-05-16T00:00:00Z") },
-        Employee: { EmployeeID: 5, FirstName: "Steven", LastName: "Buchanan", Title: "Sales Manager" },
-        Freight: 15.00,
-        OrderTotal: 476.875,
-        Shipment: { Shipper: { ShipperID: 3, CompanyName: "Federal Shipping" }, ShipName: "Alfreds Futterkiste", ShipAddress: "Obere Str. 57", ShipCity: "Berlin", ShipCountry: "Germany" },
-        Orderdetails: [
-          { UnitPrice: 18.00, Quantity: 10, Discount: 0, Value: 180.00, product: { ProductID: 1, ProductName: "Chai", QuantityPerUnit: "10 boxes x 20 bags", CategoryID: 1, CategoryName: "Beverages" } },
-          { UnitPrice: 62.50, Quantity: 5, Discount: 0.05, Value: 296.875, product: { ProductID: 31, ProductName: "Ikura", QuantityPerUnit: "12 - 200 g jars", CategoryID: 8, CategoryName: "Seafood" } }
-        ]
-      }
-    }
+    $inc: { Discount: 0.05 },
   }
 );
+db.orderdetails
+  .find({
+    OrderID: newOrderId,
+  })
+  .limit(2);
+//2
+db.OrdersInfo.find({
+  OrderID: newOrderId,
+}).limit(2);
+db.OrdersInfo.updateOne(
+  {
+    OrderID: newOrderId,
+  },
+  [
+    {
+      $set: {
+        Orderdetails: {
+          $map: {
+            input: "$Orderdetails",
+            as: "detail",
+            in: {
+              $mergeObjects: [
+                "$$detail",
+                {
+                  Discount: { $add: ["$$detail.Discount", 0.05] },
+                  Value: {
+                    $multiply: [
+                      "$$detail.UnitPrice",
+                      "$$detail.Quantity",
+                      { $subtract: [1, { $add: ["$$detail.Discount", 0.05] }] },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    },
+    {
+      $set: {
+        Ordertotal: {
+          $sum: "$Orderdetails.Value",
+        },
+      },
+    },
+  ]
+);
+db.OrdersInfo.find({
+  OrderID: newOrderId,
+}).limit(2);
+//3
+db.CustomerInfo.find({ CustomerID: "ALFKI" });
+db.CustomerInfo.updateOne(
+  {
+    CustomerID: "ALFKI",
+  },
+  [
+    {
+      $set: {
+        Orders: {
+          $map: {
+            input: "$Orders",
+            as: "order",
+            in: {
+              $cond: {
+                if: { $eq: ["$$order.OrderID", newOrderId] },
+                then: {
+                  $mergeObjects: [
+                    "$$order",
+                    {
+                      Orderdetails: {
+                        $map: {
+                          input: "$$order.Orderdetails",
+                          as: "detail",
+                          in: {
+                            $mergeObjects: [
+                              "$$detail",
+                              {
+                                Discount: { $add: ["$$detail.Discount", 0.05] },
+                                Value: {
+                                  $multiply: [
+                                    "$$detail.UnitPrice",
+                                    "$$detail.Quantity",
+                                    {
+                                      $subtract: [
+                                        1,
+                                        { $add: ["$$detail.Discount", 0.05] },
+                                      ],
+                                    },
+                                  ],
+                                },
+                              },
+                            ],
+                          },
+                        },
+                      },
+                    },
+                  ],
+                },
+                else: "$$order",
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $set: {
+        Orders: {
+          $map: {
+            input: "$Orders",
+            as: "order",
+            in: {
+              $cond: {
+                if: { $eq: ["$$order.OrderID", newOrderId] },
+                then: {
+                  $mergeObjects: [
+                    "$$order",
+                    {
+                      OrderTotal: { $sum: "$$order.Orderdetails.Value" },
+                    },
+                  ],
+                },
+                else: "$$order",
+              },
+            },
+          },
+        },
+      },
+    },
+  ]
+);
+db.CustomerInfo.find({
+  CustomerID: "ALFKI",
+}).limit(2);
 ```
 
 ....
@@ -1554,11 +1615,13 @@ db.Reservation1.insertMany([
   { tripId: tripMazuryId, personId: persEwaId,    no_tickets: 2 }
 ]);
 ```
-**Model 2**  
+
+**Model 2**
 
 Wszystkie dane zagnieżdżone w dwóch kolekcjach: **PersonInfo** i **TripInfo**
 
- * a) Tworzenie kolekcji:
+- a) Tworzenie kolekcji:
+
 ```sql
 db.createCollection("TripInfo", {
     validator: {
@@ -1662,7 +1725,9 @@ db.createCollection("PersonInfo", {
     }
   });
 ```
- * b) Wypełnienie kolekcji danymi z modelu 1
+
+- b) Wypełnienie kolekcji danymi z modelu 1
+
 ```sql
 //Wypełnienie kolekcji PersonInfo
   db.Person1.aggregate([
@@ -1783,7 +1848,7 @@ db.createCollection("PersonInfo", {
     },
     { $merge: { into: "PersonInfo" } }
   ]);
-//Wypełnienie kolekcji TripInfo 
+//Wypełnienie kolekcji TripInfo
 db.Trip1.aggregate([
     {
       $lookup: {
@@ -1870,15 +1935,17 @@ db.Trip1.aggregate([
       }
     },
     { $merge: { into: "TripInfo", whenMatched: "replace", whenNotMatched: "insert" } }
-  ]);  
+  ]);
 ```
+
 ##
 
 **Model 3**
 
 Rozwiązanie pośrednie z zagnieżdżonymi tablicami wewnątrz oryginalnych kolekcji oraz częsciowo znormalizowane
 
- * a) Tworzenie kolekcji Company3, Reservation3, Person3 i Trip3
+- a) Tworzenie kolekcji Company3, Reservation3, Person3 i Trip3
+
 ```js
 // 1. Company3 – firmy z zagnieżdżonymi wycieczkami
 db.createCollection("Company3", {
@@ -2035,10 +2102,10 @@ db.createCollection("Reservation3", {
 });
 ```
 
- * b) Wypełnienie kolekcji danymi z modelu 1
+- b) Wypełnienie kolekcji danymi z modelu 1
 
 ```js
-// Wstawiamy firmy 
+// Wstawiamy firmy
 
 db.Company1.aggregate([
   {
@@ -2261,7 +2328,7 @@ vdb.Reservation1.aggregate([
 **Porównanie operacji dla modelu 1, 2 i 3**
 
 ```js
-// 1. Pobranie wszystkich wycieczek dla firmy o _id = comp1Id 
+// 1. Pobranie wszystkich wycieczek dla firmy o _id = comp1Id
 const comp1Id = db.Company1.findOne()._id;
 // Model 1 - znormalizowany
 db.Company1.aggregate([
@@ -2279,7 +2346,7 @@ db.Company1.aggregate([
 db.TripInfo.find(
   { "company._id": comp1Id },
   { name: 1, destination: 1, date: 1, max_places: 1, _id: 0 }
-)
+);
 // Model 3 - częsciowo znormalizowany
 db.Company3.findOne({ _id: comp1Id }, { _id: 0, name: 1, trips: 1 });
 
@@ -2350,10 +2417,10 @@ db.PersonInfo.aggregate([
       _id: 0,
       firstname: 1,
       lastname: 1,
-      reservation: "$reservations"
-    }
-  }
-])
+      reservation: "$reservations",
+    },
+  },
+]);
 // Model 3
 db.Person3.aggregate([
   { $match: { _id: person1Id } },
@@ -2363,11 +2430,10 @@ db.Person3.aggregate([
       _id: 0,
       firstname: 1,
       lastname: 1,
-      reservation: "$reservations"
-    }
-  }
-])
-
+      reservation: "$reservations",
+    },
+  },
+]);
 
 // 3. Dodanie nowej rezerwacji
 const person = db.Person1.findOne();
@@ -2382,7 +2448,10 @@ const newRes = db.Reservation1.insertOne({
 const person = db.Person1.findOne();
 const trip = db.Trip1.findOne();
 const company = db.Company1.findOne({ _id: trip.companyId });
-const ratingDoc = db.Rating1.findOne({ tripId: trip._id, personId: person._id });
+const ratingDoc = db.Rating1.findOne({
+  tripId: trip._id,
+  personId: person._id,
+});
 
 // a) Dodaj do TripInfo
 db.TripInfo.updateOne(
@@ -2394,9 +2463,9 @@ db.TripInfo.updateOne(
         firstname: person.firstname,
         lastname: person.lastname,
         no_tickets: 2,
-        rating: ratingDoc ? ratingDoc.rating : null
-      }
-    }
+        rating: ratingDoc ? ratingDoc.rating : null,
+      },
+    },
   }
 );
 // b) Dodaj do PersonInfo
@@ -2412,12 +2481,12 @@ db.PersonInfo.updateOne(
         company: {
           _id: company._id,
           name: company.name,
-          address: company.address
+          address: company.address,
         },
         no_tickets: 2,
-        rating: ratingDoc ? ratingDoc.rating : null
-      }
-    }
+        rating: ratingDoc ? ratingDoc.rating : null,
+      },
+    },
   }
 );
 // Model 3
@@ -2463,7 +2532,7 @@ db.Trip3.updateOne(
   { $set: { available_places: tripInfo.max_places - totalTickets } }
 );
 
-// 4. Zmiana liczby biletów w rezerwacji 
+// 4. Zmiana liczby biletów w rezerwacji
 // Model 1
 db.Reservation1.updateOne(
   { _id: newRes.insertedId },
@@ -2495,7 +2564,7 @@ db.Person3.updateOne(
   { $set: { "reservations.$.no_tickets": 3 } }
 );
 
-// 5. Obliczenie średniej oceny dla wycieczki 
+// 5. Obliczenie średniej oceny dla wycieczki
 // Model 1
 db.Rating1.aggregate([
   { $match: { tripId: trip1Id } },
@@ -2511,10 +2580,10 @@ db.TripInfo.aggregate([
   {
     $group: {
       _id: "$_id",
-      avg_rating: { $avg: "$reservations.rating" }
-    }
-  }
-])
+      avg_rating: { $avg: "$reservations.rating" },
+    },
+  },
+]);
 
 // Model 3
 db.Trip3.findOne({ _id: trip3Id }, { _id: 0, name: 1, average_rating: 1 });
@@ -2530,13 +2599,13 @@ db.TripInfo.find({
   destination: "Mazury",
   date: { $gte: ISODate("2025-01-01") },
   "company.name": "TravelCo",
-  max_places: { $gte: 2 }
-})
+  max_places: { $gte: 2 },
+});
 
 db.TripInfo.find({
   destination: "Mazury",
-  date: { $gte: ISODate("2025-01-01") }
-})
+  date: { $gte: ISODate("2025-01-01") },
+});
 
 // Model 3
 
@@ -2547,7 +2616,7 @@ db.Company3.find({
   "trips.date": { $gte: ISODate("2025-01-01") },
 });
 
-// 7. Aktualizacja firmy 
+// 7. Aktualizacja firmy
 
 // Model 1
 db.Company1.updateOne(
@@ -2565,8 +2634,10 @@ db.TripInfo.updateMany(
 //b)
 db.PersonInfo.updateMany(
   { "reservations.company._id": companyId },
-  { $set: { "reservations.$[elem].company.address": "ul. Nowa 123, Warszawa" } },
-  { arrayFilters: [ { "elem.company._id": companyId } ] }
+  {
+    $set: { "reservations.$[elem].company.address": "ul. Nowa 123, Warszawa" },
+  },
+  { arrayFilters: [{ "elem.company._id": companyId }] }
 );
 
 // Model 3
@@ -2596,13 +2667,14 @@ const trip = db.TripInfo.findOne({ name: "Mazury Tour" });
 db.PersonInfo.find(
   { "reservations.tripId": trip._id },
   { firstname: 1, lastname: 1, "reservations.$": 1 }
-)
+);
 // Model 3
 db.Person3.find(
   { "reservations.tripId": trip3Id },
   { _id: 0, firstname: 1, lastname: 1 }
 );
 ```
+
 **Ciekawe zapytania dla modelu 3**
 
 ```sql
@@ -2639,7 +2711,9 @@ db.TripInfo.find(
 )
 ```
 
----
+### Wnioski dla zadania 2
+
+W przypadku modelów baz danych o zagnieżdżonych strukturach lub dodatkowych kolekcjach pomocniczych bardzo często dużo łatwiejsze jest wykonywanie złożonych zapytań. Niestety jest to kosztem aktualizacji i wstawiania nowych danych ponieważ czyni to ten proces bardziej skomplikowanym niż dla znormalizowanej postaci bazy danych. Jest to wymiana rodzaju coś kosztem czegoś. Jednakże 'embedding' jest jedną z cech dokumentowych baz danych i jest szczególnie skuteczny po odpowiedniej analizie tego, jak baza będzie użytkowana i jakie czynności będą się najczęściej powtarzać. Dla przykładu jeśli często odczytujemy dane wycieczki, i wśród nich są opinie, to opłacalnym może być właśnie zagnieżdżenie recenzji wewnątrz wycieczek.
 
 Punktacja:
 
