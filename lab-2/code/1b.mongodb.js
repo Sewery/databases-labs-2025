@@ -178,7 +178,12 @@ db.customers.aggregate([
       as: "OrdersInfo"
     }
   },
-  { $unwind: "$OrdersInfo" },
+  {
+    $unwind: {
+      path: "$OrdersInfo",
+      preserveNullAndEmptyArrays: true
+    }
+    },
 
   {
     $group: {
