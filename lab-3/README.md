@@ -5,6 +5,7 @@
 ---
 **Autorzy: Seweryn Tasior, Filip Węgrzyn** 
 ---
+## zad 2
 ## a)
  - ProdContext.cs
     ```csharp
@@ -66,13 +67,18 @@
         context.SaveChanges();
     ```
  - Następnie zostały wykonane komendy `dotnet build` i `dotnet run`
+ 
  - Products schema
+
     ![Products schema](./images/a_products.png)
  - Suppliers schema
+
     ![Suppliers schema](./images/a_suppliers.png)
  - Zawartość tabeli Products
+
     ![Products content](./images/a_content_products.png)
  - Zawartość tabeli Suppliers
+
     ![Suppliers content](./images/a_content_suppliers.png)
 ## b)
  - Product.cs
@@ -133,11 +139,15 @@
         context.SaveChanges();
     ```
  - Następnie zostały wykonane komendy `dotnet build` i `dotnet run`
+
  - Products schema
+
     ![Products schema](./images/a_products.png)
  - Suppliers schema
+
     ![Suppliers schema](./images/a_products.png)
  - Zawartość tabeli Products i Suppliers
+
     ![Tabels content](./images/b_content.png)
 ## c)
  - Product.cs
@@ -205,10 +215,13 @@
     ```
  - Następnie zostały wykonane komendy `dotnet build` i `dotnet run`
  - Products schema
+
     ![Products schema](./images/c_products.png)
  - Suppliers schema
+
     ![Suppliers schema](./images/c_products.png)
  - Zawartość tabeli Products i Suppliers
+
     ![Tabels content](./images/c_content.png)
 ## d)
  - Product.cs
@@ -355,14 +368,19 @@
         context.SaveChanges();
     ```
  - Następnie zostały wykonane komendy `dotnet build` i `dotnet run`. Wynik poniżej:
+
     ![Output](./images/d_out.png)
  - Products i Invoices schemas
+
     ![Products and Invoices schemas](./images/d_schemas.png)
  - InvoiceProduct schema
+
     ![InvoiceProduct schema](./images/d_inv_prod_schema.png)
  - Zawartość tabeli Products i Invoices
+
     ![Tabels content](./images/d_content.png)
  - Zawartość tabeli InvoiceProduct
+
     ![InvoiceProduct schema](./images/d_inv_prod_content.png)
 ## e)
  - ProdContext.cs
@@ -497,10 +515,13 @@
     ```
 
  - Następnie zostały wykonane komendy `dotnet build` i `dotnet run`. Wynik poniżej:
+
     ![Output](./images/e_out.png)
  - Companies schema
+
     ![Products and Invoices schemas](./images/e_schema.png)
  - Zawartość tabeli Companies
+
     ![Tabels content](./images/e_content.png)
 ## f)
  - ProdContext.cs
@@ -583,9 +604,29 @@
     ```
 
  - Następnie zostały wykonane komendy `dotnet build` i `dotnet run`. Wynik poniżej:
+
     ![Output](./images/f_out.png)
  - Companies, Suppliers and Customers schema
+
     ![Companies, Suppliers and Customers schemas](./images/f_schemas.png)
  - Zawartość tabel Companies, Suppliers and Customers
+
     ![Tabels content](./images/f_content.png)
 ## g)
+### Table-Per-Hierarchy (TPH)
+W tej strukturze danych wszystkie dane są mapowane do jedenej tabeli, która korzysta z dyskriminatora `ComapnyType` do rozróżnienia typów. Pola specyficzne dla podklas mogą zaierać wartości NULL dla obiektów innych typów
+### Table-Per-Type (TPT)
+Każda klasa jest mapowana do oddzielnej tabeli, natomiast tabela bazowa zawiera wspólne kolumny dla wszystkich typów. Tabele pochodne zawierają tylko kolumny specyficzne dla danego typu
+### Porównanie
+- **Wydajność** TPH ma lepszą wydajność odczytu i zapisu, ponieważ wymaga dostępu do jednej tylko tabeli oraz nie wyamga JOIN-ów
+- **Normalizacja** TPH jest mniej znormalizowana niż TPT. Łatwiejsze nakładanie ograniczeń integralnościowych w TPT.
+### Jakiej używać?
+#### TPH najlepiej używać:
+- Gdy hierarchia dziedziczenia jest stosunkowo stabilna
+- Gdy podtypy mają niewiele unikalnych właściwości
+- Gdy wydajność odczytu/zapisu jest priorytetem
+- W przypadku aplikacji z dużą liczbą operacji CRUD
+#### TPT najlepiej używać:
+- Gdy hierarchia jest złożona z wieloma podtypami
+- Gdy podtypy mają wiele unikalnych właściwości
+- Gdy integralność danych i normalizacja są priorytetem
