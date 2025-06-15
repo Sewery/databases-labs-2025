@@ -28,36 +28,4 @@ public class Product {
 
     public Product() {
     }
-
-    public void setSupplier(Supplier supplier) {
-        this.supplier = supplier;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public int getUnitsInStock() {
-        return unitsInStock;
-    }
-
-    public void setUnitsInStock(int unitsInStock) {
-        this.unitsInStock = unitsInStock;
-    }
-
-    public Supplier getSupplier() {
-        return supplier;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
 }

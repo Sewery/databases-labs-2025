@@ -15,5 +15,4 @@ public class Invoice {
     public List<InvoiceItem> getItems() {
         return items;
     }
-
 }
