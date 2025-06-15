@@ -1,11 +1,11 @@
 using System.Collections.ObjectModel;
 
-public class Supplier
+public class Supplier : Company
 {
-    public int SupplierID { get; set; }
-    public String? CompanyName { get; set; }
-    public String? Street { get; set; }
-    public String? City { get; set; }
-
-    public ICollection<Product>? Products { get; set; }
+    public string? BankAccountNumber { get; set; }
+    
+    public Supplier()
+    {
+        CompanyType = "Supplier";
+    }
 }
